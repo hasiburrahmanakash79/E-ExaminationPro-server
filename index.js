@@ -35,6 +35,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
+    // Database collection 
     const shortQuestion = client.db("E-ExaminationPro").collection("shortQuestion");
     const fillInTheBlank = client.db("E-ExaminationPro").collection("fillInTheBlank")
     const subjectsCollection = client.db("E-ExaminationPro").collection("subjects")
@@ -63,15 +64,19 @@ async function run() {
       res.send(result);
     })
 
+    // get short question from database
     app.get('/shortQ', async(req, res) =>{
       const result = await shortQuestion.find().toArray();
       res.send(result);
     })
 
+    // get fill in the blank question from database
     app.get('/blankQ', async(req, res) => {
       const result = await fillInTheBlank.find().toArray();
       res.send(result)
     })
+
+    
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
