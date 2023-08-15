@@ -38,6 +38,31 @@ async function run() {
     // Database collection 
     const shortQuestion = client.db("E-ExaminationPro").collection("shortQuestion");
     const fillInTheBlank = client.db("E-ExaminationPro").collection("fillInTheBlank")
+    const subjectsCollection = client.db("E-ExaminationPro").collection("subjects")
+    const testimonialCollection = client.db("E-ExaminationPro").collection("testimonials")
+    const faqCollection = client.db("E-ExaminationPro").collection("faqs")
+    const statisticsCollection = client.db("E-ExaminationPro").collection("statistics")
+
+
+    app.get('/subjects', async(req, res) =>{
+      const result = await subjectsCollection.find().toArray();
+      res.send(result);
+    })
+  
+    app.get('/testimonials', async(req, res) =>{
+      const result = await testimonialCollection.find().toArray();
+      res.send(result);
+    })
+    
+    app.get('/faqs', async(req, res) =>{
+      const result = await faqCollection.find().toArray();
+      res.send(result);
+    })
+    
+    app.get('/statistics', async(req, res) =>{
+      const result = await statisticsCollection.find().toArray();
+      res.send(result);
+    })
 
     // get short question from database
     app.get('/shortQ', async(req, res) =>{
@@ -83,7 +108,7 @@ async function run() {
     })
     
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
