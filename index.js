@@ -45,12 +45,42 @@ async function run() {
       res.send(result);
     })
 
+    // Post short question from database
+    app.post('/shortQ', async(req, res) => {
+      const addShortQ = req.body;
+      const result = await shortQuestion.insertOne(addShortQ);
+      res.send(result);
+    })
+
+    // Delete short question from database
+    app.delete('/shortQ/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await shortQuestion.deleteOne(query);
+      res.send(result);
+    })
+
+
     // get fill in the blank question from database
     app.get('/blankQ', async(req, res) => {
       const result = await fillInTheBlank.find().toArray();
       res.send(result)
     })
 
+    // Post fill in the blank question from database
+    app.post('/blankQ', async(req, res) => {
+      const addBlankQ = req.body;
+      const result = await fillInTheBlank.insertOne(addBlankQ)
+      res.send(result);
+    })
+
+    // Delete fill in the blank question from database
+    app.post('/blankQ/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await fillInTheBlank.deleteOne(query)
+      res.send(result);
+    })
     
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
