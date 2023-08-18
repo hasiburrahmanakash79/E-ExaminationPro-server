@@ -1,7 +1,10 @@
 const express = require('express')
 const app = express()
+const axios = require('axios')
 const cors = require('cors')
+
 require('dotenv').config()
+
 const port = process.env.PORT || 5000
 
 // Middleware
@@ -44,69 +47,83 @@ async function run() {
     const statisticsCollection = client.db("E-ExaminationPro").collection("statistics")
 
 
-    app.get('/subjects', async(req, res) =>{
+    app.get('/subjects', async (req, res) => {
       const result = await subjectsCollection.find().toArray();
       res.send(result);
     })
-  
-    app.get('/testimonials', async(req, res) =>{
+
+    app.get('/testimonials', async (req, res) => {
       const result = await testimonialCollection.find().toArray();
       res.send(result);
     })
-    
-    app.get('/faqs', async(req, res) =>{
+
+    app.get('/faqs', async (req, res) => {
       const result = await faqCollection.find().toArray();
       res.send(result);
     })
-    
-    app.get('/statistics', async(req, res) =>{
+
+    app.get('/statistics', async (req, res) => {
       const result = await statisticsCollection.find().toArray();
       res.send(result);
     })
 
     // get short question from database
-    app.get('/shortQ', async(req, res) =>{
+    app.get('/shortQ', async (req, res) => {
       const result = await shortQuestion.find().toArray();
       res.send(result);
     })
 
     // Post short question from database
-    app.post('/shortQ', async(req, res) => {
+    app.post('/shortQ', async (req, res) => {
       const addShortQ = req.body;
       const result = await shortQuestion.insertOne(addShortQ);
       res.send(result);
     })
 
     // Delete short question from database
-    app.delete('/shortQ/:id', async(req, res) => {
+    app.delete('/shortQ/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await shortQuestion.deleteOne(query);
       res.send(result);
     })
 
 
     // get fill in the blank question from database
-    app.get('/blankQ', async(req, res) => {
+    app.get('/blankQ', async (req, res) => {
       const result = await fillInTheBlank.find().toArray();
       res.send(result)
     })
 
     // Post fill in the blank question from database
-    app.post('/blankQ', async(req, res) => {
+    app.post('/blankQ', async (req, res) => {
       const addBlankQ = req.body;
       const result = await fillInTheBlank.insertOne(addBlankQ)
       res.send(result);
     })
 
     // Delete fill in the blank question from database
-    app.post('/blankQ/:id', async(req, res) => {
+    app.post('/blankQ/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await fillInTheBlank.deleteOne(query)
       res.send(result);
     })
-    
+
+    // resolving cors issue when trying to fetch directly data from external api's to frontend so we have to use a proxy server to do that
+    app.get('/api/quotes', async (req, res) => {
+      try {
+        const response = await axios.get('https://zenquotes.io/api/quotes')
+        const data = response.data
+        // console.log(data);
+        res.json(data)
+
+      } catch (error) {
+        res.status(500).json({ error: 'Internal server error' })
+
+      }
+    })
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
