@@ -75,7 +75,7 @@ async function run() {
     })
 
     // Delete fill in the blank question from database
-    app.post('/blankQ/:id', async(req, res) => {
+    app.delete('/blankQ/:id', async(req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
       const result = await fillInTheBlank.deleteOne(query)
