@@ -39,8 +39,9 @@ async function run() {
     // await client.connect();
 
     // Database collection 
-    const shortQuestion = client.db("E-ExaminationPro").collection("shortQuestion");
-    const fillInTheBlank = client.db("E-ExaminationPro").collection("fillInTheBlank")
+    const shortQuestionCollection = client.db("E-ExaminationPro").collection("shortQuestions");
+    const quizQuestionCollection = client.db("E-ExaminationPro").collection("quizQuestions");
+    const fillInTheBlankCollection = client.db("E-ExaminationPro").collection("fillInTheBlanks")
     const subjectsCollection = client.db("E-ExaminationPro").collection("subjects")
     const testimonialCollection = client.db("E-ExaminationPro").collection("testimonials")
     const faqCollection = client.db("E-ExaminationPro").collection("faqs")
@@ -69,14 +70,14 @@ async function run() {
 
     // get short question from database
     app.get('/shortQ', async (req, res) => {
-      const result = await shortQuestion.find().toArray();
+      const result = await shortQuestionCollection.find().toArray();
       res.send(result);
     })
 
     // Post short question from database
     app.post('/shortQ', async (req, res) => {
       const addShortQ = req.body;
-      const result = await shortQuestion.insertOne(addShortQ);
+      const result = await shortQuestionCollection.insertOne(addShortQ);
       res.send(result);
     })
 
@@ -84,21 +85,21 @@ async function run() {
     app.delete('/shortQ/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await shortQuestion.deleteOne(query);
+      const result = await shortQuestionCollection.deleteOne(query);
       res.send(result);
     })
 
 
     // get fill in the blank question from database
     app.get('/blankQ', async (req, res) => {
-      const result = await fillInTheBlank.find().toArray();
+      const result = await fillInTheBlankCollection.find().toArray();
       res.send(result)
     })
 
     // Post fill in the blank question from database
     app.post('/blankQ', async (req, res) => {
       const addBlankQ = req.body;
-      const result = await fillInTheBlank.insertOne(addBlankQ)
+      const result = await fillInTheBlankCollection.insertOne(addBlankQ)
       res.send(result);
     })
 
@@ -106,7 +107,7 @@ async function run() {
     app.post('/blankQ/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
-      const result = await fillInTheBlank.deleteOne(query)
+      const result = await fillInTheBlankCollection.deleteOne(query)
       res.send(result);
     })
 
