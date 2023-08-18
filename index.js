@@ -39,11 +39,13 @@ async function run() {
     // await client.connect();
 
     // Database collection 
-    const shortQuestion = client.db("E-ExaminationPro").collection("shortQuestion");
-    const fillInTheBlank = client.db("E-ExaminationPro").collection("fillInTheBlank")
+    const shortQuestionCollection = client.db("E-ExaminationPro").collection("shortQuestions");
+    const quizQuestionCollection = client.db("E-ExaminationPro").collection("quizQuestions");
+    const fillInTheBlankCollection = client.db("E-ExaminationPro").collection("fillInTheBlanks")
     const subjectsCollection = client.db("E-ExaminationPro").collection("subjects")
     const testimonialCollection = client.db("E-ExaminationPro").collection("testimonials")
     const faqCollection = client.db("E-ExaminationPro").collection("faqs")
+    const instructorsCollection = client.db("E-ExaminationPro").collection("instructors")
     const statisticsCollection = client.db("E-ExaminationPro").collection("statistics")
 
 
@@ -67,16 +69,37 @@ async function run() {
       res.send(result);
     })
 
+    // get MCQ question from database
+    app.get('/quizQ', async (req, res) => {
+      const result = await quizQuestionCollection.find().toArray();
+      res.send(result);
+    })
+
+    // Post MCQ question from database
+    app.post('/quizQ', async (req, res) => {
+      const addShortQ = req.body;
+      const result = await quizQuestionCollection.insertOne(addShortQ);
+      res.send(result);
+    })
+
+    // Delete short question from database
+    app.delete('/quizQ/:id', async(req, res) => {
+      const id =  req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await quizQuestionCollection.deleteOne(query);
+      res.send(result)
+    })
+
     // get short question from database
     app.get('/shortQ', async (req, res) => {
-      const result = await shortQuestion.find().toArray();
+      const result = await shortQuestionCollection.find().toArray();
       res.send(result);
     })
 
     // Post short question from database
     app.post('/shortQ', async (req, res) => {
       const addShortQ = req.body;
-      const result = await shortQuestion.insertOne(addShortQ);
+      const result = await shortQuestionCollection.insertOne(addShortQ);
       res.send(result);
     })
 
@@ -84,30 +107,36 @@ async function run() {
     app.delete('/shortQ/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await shortQuestion.deleteOne(query);
+      const result = await shortQuestionCollection.deleteOne(query);
       res.send(result);
     })
 
 
     // get fill in the blank question from database
     app.get('/blankQ', async (req, res) => {
-      const result = await fillInTheBlank.find().toArray();
+      const result = await fillInTheBlankCollection.find().toArray();
       res.send(result)
     })
 
     // Post fill in the blank question from database
     app.post('/blankQ', async (req, res) => {
       const addBlankQ = req.body;
-      const result = await fillInTheBlank.insertOne(addBlankQ)
+      const result = await fillInTheBlankCollection.insertOne(addBlankQ)
       res.send(result);
     })
 
     // Delete fill in the blank question from database
-    app.post('/blankQ/:id', async (req, res) => {
+    app.delete('/blankQ/:id', async(req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
-      const result = await fillInTheBlank.deleteOne(query)
+      const result = await fillInTheBlankCollection.deleteOne(query)
       res.send(result);
+    })
+
+     // get Instructors from database
+     app.get('/instructors', async (req, res) => {
+      const result = await instructorsCollection.find().toArray();
+      res.send(result)
     })
 
     // resolving cors issue when trying to fetch directly data from external api's to frontend so we have to use a proxy server to do that
@@ -120,7 +149,6 @@ async function run() {
 
       } catch (error) {
         res.status(500).json({ error: 'Internal server error' })
-
       }
     })
 
