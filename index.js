@@ -45,6 +45,7 @@ async function run() {
     const subjectsCollection = client.db("E-ExaminationPro").collection("subjects")
     const testimonialCollection = client.db("E-ExaminationPro").collection("testimonials")
     const faqCollection = client.db("E-ExaminationPro").collection("faqs")
+    const instructorsCollection = client.db("E-ExaminationPro").collection("instructors")
     const statisticsCollection = client.db("E-ExaminationPro").collection("statistics")
 
 
@@ -66,6 +67,27 @@ async function run() {
     app.get('/statistics', async (req, res) => {
       const result = await statisticsCollection.find().toArray();
       res.send(result);
+    })
+
+    // get MCQ question from database
+    app.get('/quizQ', async (req, res) => {
+      const result = await quizQuestionCollection.find().toArray();
+      res.send(result);
+    })
+
+    // Post MCQ question from database
+    app.post('/quizQ', async (req, res) => {
+      const addShortQ = req.body;
+      const result = await quizQuestionCollection.insertOne(addShortQ);
+      res.send(result);
+    })
+
+    // Delete short question from database
+    app.delete('/quizQ/:id', async(req, res) => {
+      const id =  req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await quizQuestionCollection.deleteOne(query);
+      res.send(result)
     })
 
     // get short question from database
@@ -104,11 +126,17 @@ async function run() {
     })
 
     // Delete fill in the blank question from database
-    app.post('/blankQ/:id', async (req, res) => {
+    app.delete('/blankQ/:id', async(req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await fillInTheBlankCollection.deleteOne(query)
       res.send(result);
+    })
+
+     // get Instructors from database
+     app.get('/instructors', async (req, res) => {
+      const result = await instructorsCollection.find().toArray();
+      res.send(result)
     })
 
     // resolving cors issue when trying to fetch directly data from external api's to frontend so we have to use a proxy server to do that
@@ -121,7 +149,6 @@ async function run() {
 
       } catch (error) {
         res.status(500).json({ error: 'Internal server error' })
-
       }
     })
 
