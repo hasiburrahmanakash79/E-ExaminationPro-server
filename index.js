@@ -92,7 +92,10 @@ async function run() {
 
     // get short question from database
     app.get('/shortQ', async (req, res) => {
-      const result = await shortQuestionCollection.find().toArray();
+      const subject=req.query.subject
+      console.log(subject)
+      const query={subject:subject}
+      const result = await shortQuestionCollection.find(query).toArray();
       res.send(result);
     })
 
