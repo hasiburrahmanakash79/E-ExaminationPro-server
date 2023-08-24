@@ -39,6 +39,7 @@ async function run() {
     // await client.connect();
 
     // Database collection 
+    const userCollection = client.db("E-ExaminationPro").collection("users");
     const shortQuestionCollection = client.db("E-ExaminationPro").collection("shortQuestions");
     const quizQuestionCollection = client.db("E-ExaminationPro").collection("quizQuestions");
     const fillInTheBlankCollection = client.db("E-ExaminationPro").collection("fillInTheBlanks")
@@ -48,6 +49,22 @@ async function run() {
     const instructorsCollection = client.db("E-ExaminationPro").collection("instructors")
     const statisticsCollection = client.db("E-ExaminationPro").collection("statistics")
 
+
+    app.get('/users', async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const query = {email: user.email};
+      const  existingUser = await userCollection.findOne(query);
+      if(existingUser) {
+        return res.send([])
+      };
+      const result = await userCollection.insertOne(user);
+      res.send(result)
+    })
 
     app.get('/subjects', async (req, res) => {
       const result = await subjectsCollection.find().toArray();
