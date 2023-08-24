@@ -105,6 +105,19 @@ async function run() {
       res.send(result);
     })
 
+    // make instructor from user 
+    app.patch('/users/instructor/:id', async(req, res) => {
+      const id = req.params.id;
+      const filterUserId = {_id: new ObjectId(id)};
+      const updateStatus = {
+        $set: {
+          role: "instructor"
+        }
+      };
+      const result = await userCollection.updateOne(filterUserId, updateStatus);
+      res.send(result);
+    })
+
     app.get('/subjects', async (req, res) => {
       const result = await subjectsCollection.find().toArray();
       res.send(result);
