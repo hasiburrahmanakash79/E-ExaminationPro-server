@@ -48,6 +48,33 @@ async function run() {
     const faqCollection = client.db("E-ExaminationPro").collection("faqs")
     const instructorsCollection = client.db("E-ExaminationPro").collection("instructors")
     const statisticsCollection = client.db("E-ExaminationPro").collection("statistics")
+    const questionCollection= client.db("E-ExaminationPro").collection("Question_Collection")
+    const subjectCollection= client.db("E-ExaminationPro").collection("allSubjects")
+
+    app.get('/allSubjects', async (req, res) => {
+      const result = await subjectCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.post('/questionPaper', async (req, res) => {
+      const question=req.body;
+      console.log(question)
+      const result=await questionCollection.insertOne(question)
+      res.send(result)
+  })
+    app.get('/questionPaper', async (req, res) => {
+      const type=req.query.type;
+      const subject=req.query.subject
+      const query={subjectName:subject,type:type}
+      const result=await questionCollection.find(query).toArray()
+      res.send(result)
+  })
+    app.get('/questionPaper/:id', async (req, res) => {
+      const id=req.params.id;
+      const query={_id:new ObjectId(id)}
+      const result=await questionCollection.findOne(query)
+      res.send(result)
+  })
 
 
     app.get('/users', async (req, res) => {
