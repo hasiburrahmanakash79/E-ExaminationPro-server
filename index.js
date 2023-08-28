@@ -68,11 +68,11 @@ async function run() {
 
     // find Admin from database
     app.get("/users/admin/:email", async (req, res) => {
-      const email = req.params.email;
-
-      if (req.decoded.email !== email) {
-        res.send({ admin: false });
-      }
+      const email = req?.params?.email;
+      console.log(email,"emailll");
+      // if (req.decoded.email !== email) {
+      //   res.send({ admin: false });
+      // }
       const query = { email: email };
       const user = await userCollection.findOne(query);
       const result = { admin: user?.role === "admin" };
@@ -83,9 +83,9 @@ async function run() {
     app.get("/users/instructor/:email", async (req, res) => {
       const email = req.params.email;
 
-      if (req.decoded.email !== email) {
-        res.send({ instructor: false });
-      }
+      // if (req.decoded.email !== email) {
+      //   res.send({ instructor: false });
+      // }
       const query = { email: email };
       const user = await userCollection.findOne(query);
       const result = { instructor: user?.role === "instructor" };
@@ -162,7 +162,7 @@ async function run() {
     // get short question from database
     app.get('/shortQ', async (req, res) => {
       const subject=req.query.subject
-      console.log(subject)
+      // console.log(subject)
       const query={subject:subject}
       const result = await shortQuestionCollection.find(query).toArray();
       res.send(result);
