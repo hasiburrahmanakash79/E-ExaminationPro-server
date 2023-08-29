@@ -35,25 +35,27 @@ const client = new MongoClient(uri, {
 
 
 /////////////JWT verify///////////
+
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
-
   if (!authorization) {
-    console.log('401-1')
-    return res.status(401).send({ error: true, message: 'unauthorized access' });
+    return res
+      .status(401)
+      .send({ error: true, message: "unauthorized access" });
   }
-  // bearer token
-  const token = authorization.split(' ')[1];
+  //bearer token
+  const token = authorization.split(" ")[1];
 
   jwt.verify(token, process.env.SECRETE_TOKEN, (err, decoded) => {
     if (err) {
-      console.log('401-2')
-      return res.status(401).send({ error: true, message: 'unauthorized access' })
+      return res
+        .status(401)
+        .send({ error: true, message: "unauthorized access" });
     }
     req.decoded = decoded;
     next();
-  })
-}
+  });
+};
 
 
 async function run() {
@@ -74,8 +76,7 @@ async function run() {
     
    
 
-    //////////////////////////////////////////////////////// Experiemnt (Abir)
-
+    ///// JWT /////
     app.post('/jwt', (req, res) => {
       const userEmail=req.body;
       console.log(userEmail)
@@ -84,12 +85,11 @@ async function run() {
   })
 
 
+
     const questionCollection= client.db("E-ExaminationPro").collection("Question_Collection")
     const subjectCollection= client.db("E-ExaminationPro").collection("allSubjects")
 
     app.get('/allSubjects',verifyJWT ,async (req, res) => {
-      //const decoded=req.decoded
-     // console.log(decoded,'hit')
       const result = await subjectCollection.find().toArray();
       res.send(result);
     })
@@ -115,14 +115,12 @@ async function run() {
   })
     ///////////////////////////////////
 
-    
-
-
     app.get('/users', async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     })
 
+    //post user in database
     app.post('/users', async (req, res) => {
       const user = req.body;
       const query = {email: user.email};
@@ -135,11 +133,12 @@ async function run() {
     })
 
     // find Admin from database
-    app.get("/users/admin/:email", async (req, res) => {
+    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
 
+      console.log("user", req.decoded.email);
       if (req.decoded.email !== email) {
-        res.send({ admin: false });
+        return res.send({ admin: false });
       }
       const query = { email: email };
       const user = await userCollection.findOne(query);
@@ -148,11 +147,11 @@ async function run() {
     });
 
     // find instructor from database
-    app.get("/users/instructor/:email", async (req, res) => {
+    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
 
       if (req.decoded.email !== email) {
-        res.send({ instructor: false });
+        return res.send({ instructor: false });
       }
       const query = { email: email };
       const user = await userCollection.findOne(query);
