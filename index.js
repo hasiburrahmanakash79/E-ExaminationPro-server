@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 const express = require('express')
 const app = express()
 const axios = require('axios')
@@ -311,4 +309,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`E-examPro Server is running on port ${port}`)
 })
->>>>>>> db616182a23363b42665d6774f587d4a31b88d54
