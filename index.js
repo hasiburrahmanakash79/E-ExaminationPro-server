@@ -294,7 +294,8 @@ async function run() {
       res.send(result);
     });
 
-    // payment system
+
+    //-------- payment system----------//
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = price * 100;
