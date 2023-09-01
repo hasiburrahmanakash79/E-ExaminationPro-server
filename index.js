@@ -346,10 +346,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-<<<<<<< HEAD
-  console.log(`E-examPro Server is running on port ${port}`)
-})
-=======
   console.log(`E-examPro Server is running on port ${port}`);
 });
->>>>>>> 285f7620cb5c76cec298cb44b496edd558984c69
