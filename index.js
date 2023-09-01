@@ -317,6 +317,16 @@ async function run() {
       res.send({ insertResult, insertHistory });
     });
 
+    app.get("/history/:email", async(req, res) => {
+      const email = req.params.email;
+      if(!email){
+        res.send([])
+      }
+      const query = {email: email}
+      const result = await paymentHistory.find(query).toArray()
+      res.send(result)
+    })
+
     // resolving cors issue when trying to fetch directly data from external api's to frontend so we have to use a proxy server to do that
     app.get("/api/quotes", async (req, res) => {
       try {
