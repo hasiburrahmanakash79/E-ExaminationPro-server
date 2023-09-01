@@ -64,6 +64,9 @@ async function run() {
     const shortQuestionCollection = client
       .db("E-ExaminationPro")
       .collection("shortQuestions");
+    const longQuestionCollection = client
+      .db("E-ExaminationPro")
+      .collection("longQuestions");
     const quizQuestionCollection = client
       .db("E-ExaminationPro")
       .collection("quizQuestions");
@@ -266,6 +269,25 @@ async function run() {
       const result = await shortQuestionCollection.deleteOne(query);
       res.send(result);
     });
+    /**=========================
+     * Long question api's
+     * ====================
+     */
+    // get long question from database
+    app.get("/longQ", async (req, res) => {
+      const subject = req.query.subject;
+      console.log(subject);
+      const query = { subject: subject };
+      const result = await longQuestionCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Post long question from database
+    app.post("/longQ", async (req, res) => {
+      const addLongQ = req.body;
+      const result = await longQuestionCollection.insertOne(addLongQ);
+      res.send(result);
+    });
 
     // get fill in the blank question from database
     app.get("/blankQ", async (req, res) => {
@@ -294,8 +316,7 @@ async function run() {
       res.send(result);
     });
 
-
-    //-------- payment system----------//
+    // payment system
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = price * 100;
