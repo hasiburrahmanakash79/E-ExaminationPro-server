@@ -64,6 +64,9 @@ async function run() {
     const shortQuestionCollection = client
       .db("E-ExaminationPro")
       .collection("shortQuestions");
+    const longQuestionCollection = client
+      .db("E-ExaminationPro")
+      .collection("longQuestions");
     const quizQuestionCollection = client
       .db("E-ExaminationPro")
       .collection("quizQuestions");
@@ -266,6 +269,25 @@ async function run() {
       const result = await shortQuestionCollection.deleteOne(query);
       res.send(result);
     });
+    /**=========================
+     * Long question api's
+     * ====================
+     */
+    // get long question from database
+    app.get("/longQ", async (req, res) => {
+      const subject = req.query.subject;
+      console.log(subject);
+      const query = { subject: subject };
+      const result = await longQuestionCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Post long question from database
+    app.post("/longQ", async (req, res) => {
+      const addLongQ = req.body;
+      const result = await longQuestionCollection.insertOne(addLongQ);
+      res.send(result);
+    });
 
     // get fill in the blank question from database
     app.get("/blankQ", async (req, res) => {
@@ -294,8 +316,7 @@ async function run() {
       res.send(result);
     });
 
-
-    //-------- payment system----------//
+    // payment system
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = price * 100;
@@ -316,6 +337,21 @@ async function run() {
       const insertHistory = await paymentHistory.insertOne(payment);
       res.send({ insertResult, insertHistory });
     });
+
+    app.get("/history/:email", async(req, res) => {
+      const email = req.params.email;
+      if(!email){
+        res.send([])
+      }
+      const query = {email: email}
+      const result = await paymentHistory.find(query).toArray()
+      res.send(result)
+    })
+
+    app.get("/history", async(req, res) =>{
+      const result = await paymentHistory.find().toArray()
+      res.send(result)
+    })
 
     // resolving cors issue when trying to fetch directly data from external api's to frontend so we have to use a proxy server to do that
     app.get("/api/quotes", async (req, res) => {
