@@ -327,6 +327,11 @@ async function run() {
       res.send(result)
     })
 
+    app.get("/history", async(req, res) =>{
+      const result = await paymentHistory.find().toArray()
+      res.send(result)
+    })
+
     // resolving cors issue when trying to fetch directly data from external api's to frontend so we have to use a proxy server to do that
     app.get("/api/quotes", async (req, res) => {
       try {
