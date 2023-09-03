@@ -133,8 +133,8 @@ async function run() {
       const result = await questionCollection.findOne(query);
       res.send(result);
     });
-    ///////////////////////////////////
 
+    ////////////////User Get, Delete Api///////////////////
     app.get("/users", async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
@@ -156,7 +156,6 @@ async function run() {
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
 
-      console.log("user", req.decoded.email);
       if (req.decoded.email !== email) {
         return res.send({ admin: false });
       }
