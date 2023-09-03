@@ -133,8 +133,15 @@ async function run() {
       const result = await questionCollection.findOne(query);
       res.send(result);
     });
+    
+    ///// post result ----------------------------------------new Abir
+    app.post('/result',async(req,res)=>{
+      //// need to work here
+    })
 
-    ////////////////User Get, Delete Api///////////////////
+    ///////////////////////////////////
+
+    ////////////////User Get,///////////////////
     app.get("/users", async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
