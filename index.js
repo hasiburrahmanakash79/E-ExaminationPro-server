@@ -99,6 +99,10 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("paymentHistory");
 
+    const resultCollection = client //---------------------------new Abir
+      .db("E-ExaminationPro")
+      .collection("result_Collection");
+
     ///// JWT /////
     app.post("/jwt", (req, res) => {
       const userEmail = req.body;
@@ -151,7 +155,7 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
-    //////////////updatePRofile//////
+    //////////////updatePRofile////// ----------------------------------------new abir
 app.patch('/updateProfile',async(req,res)=>{
   const email=req.query.email
 
@@ -172,7 +176,7 @@ app.patch('/updateProfile',async(req,res)=>{
   console.log(result)
 })
 
-    //get user info -----new abir
+    //get user info ------------------------------------------------------new abir
 
     app.get('/user',async(req,res)=>{
       const email=req.query.email
