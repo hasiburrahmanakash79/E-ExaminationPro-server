@@ -137,6 +137,11 @@ async function run() {
       const result = await questionCollection.findOne(query);
       res.send(result);
     });
+    ///// post result ----------------------------------------new Abir
+    app.post('/result',async(req,res)=>{
+      //// need to work here
+    })
+
     ///////////////////////////////////
 
     app.get("/users", async (req, res) => {
