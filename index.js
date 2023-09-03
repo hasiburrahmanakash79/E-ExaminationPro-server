@@ -99,6 +99,10 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("paymentHistory");
 
+    const resultCollection = client //---------------------------new Abir
+      .db("E-ExaminationPro")
+      .collection("result_Collection");
+
     ///// JWT /////
     app.post("/jwt", (req, res) => {
       const userEmail = req.body;
@@ -133,6 +137,12 @@ async function run() {
       const result = await questionCollection.findOne(query);
       res.send(result);
     });
+    
+    ///// post result ----------------------------------------new Abir
+    app.post('/result',async(req,res)=>{
+      //// need to work here
+    })
+
     ///////////////////////////////////
 
     app.get("/users", async (req, res) => {
@@ -151,7 +161,38 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
+    //////////////updatePRofile////// ----------------------------------------new abir
+app.patch('/updateProfile',async(req,res)=>{
+  const email=req.query.email
 
+  const data=req.body
+  const query={email:email}
+  const options = { upsert: true };
+  const doc={
+    $set: {
+      batch:data.batch,
+      gender:data.gender,
+      address:data.address,
+      mobile:data.mobile,
+      photoURL:data.photoURL
+    }}
+  console.log(data,email)
+  const result=await userCollection.updateOne(query,doc,options)
+  res.send(result)
+  console.log(result)
+})
+
+    //get user info ------------------------------------------------------new abir
+
+    app.get('/user',async(req,res)=>{
+      const email=req.query.email
+      const query={email:email}
+      console.log('get profile info:',email)
+      const result=await userCollection.findOne(query)
+      res.send(result)
+    })
+
+    ///-end
     // find Admin from database
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
