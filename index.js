@@ -60,6 +60,7 @@ async function run() {
     // await client.connect();
 
     // Database collection
+    let tempCollection;
     const userCollection = client.db("E-ExaminationPro").collection("users");
     const shortQuestionCollection = client
       .db("E-ExaminationPro")
@@ -104,7 +105,7 @@ async function run() {
       const userEmail = req.body;
       console.log(userEmail);
       const token = jwt.sign(userEmail, `${process.env.SECRETE_TOKEN}`, {
-        expiresIn: "1h",
+        expiresIn: "7d",
       });
       res.send({ token });
     });
@@ -133,9 +134,9 @@ async function run() {
       const result = await questionCollection.findOne(query);
       res.send(result);
     });
-    
+
     ///// post result ----------------------------------------new Abir
-    app.post('/result',async(req,res)=>{
+    app.post('/result', async (req, res) => {
       //// need to work here
     })
 
@@ -158,7 +159,40 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
+    
+    //////////////updatePRofile////// ----------------------------------------new abir
+    app.patch('/updateProfile', async (req, res) => {
+      const email = req.query.email
 
+      const data = req.body
+      const query = { email: email }
+      const options = { upsert: true };
+      const doc = {
+        $set: {
+          batch: data.batch,
+          gender: data.gender,
+          address: data.address,
+          mobile: data.mobile,
+          photoURL: data.photoURL
+        }
+      }
+      console.log(data, email)
+      const result = await userCollection.updateOne(query, doc, options)
+      res.send(result)
+      console.log(result)
+    })
+
+    //get user info ------------------------------------------------------new abir
+
+    app.get('/user', async (req, res) => {
+      const email = req.query.email
+      const query = { email: email }
+      console.log('get profile info:', email)
+      const result = await userCollection.findOne(query)
+      res.send(result)
+    })
+
+    ///-end
     // find Admin from database
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
@@ -344,17 +378,17 @@ async function run() {
       res.send({ insertResult, insertHistory });
     });
 
-    app.get("/history/:email", async(req, res) => {
+    app.get("/history/:email", async (req, res) => {
       const email = req.params.email;
-      if(!email){
+      if (!email) {
         res.send([])
       }
-      const query = {email: email}
+      const query = { email: email }
       const result = await paymentHistory.find(query).toArray()
       res.send(result)
     })
 
-    app.get("/history", async(req, res) =>{
+    app.get("/history", async (req, res) => {
       const result = await paymentHistory.find().toArray()
       res.send(result)
     })
