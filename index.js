@@ -60,6 +60,7 @@ async function run() {
     // await client.connect();
 
     // Database collection
+    let tempCollection;
     const userCollection = client.db("E-ExaminationPro").collection("users");
     const shortQuestionCollection = client
       .db("E-ExaminationPro")
@@ -169,8 +170,8 @@ async function run() {
       res.send(result);
     });
     //////////////updatePRofile////// ----------------------------------------new abir
-app.patch('/updateProfile',async(req,res)=>{
-  const email=req.query.email
+    app.patch('/updateProfile', async (req, res) => {
+      const email = req.query.email
 
   const data=req.body
   const query={email:email}
@@ -384,17 +385,17 @@ app.patch('/updateProfile',async(req,res)=>{
       res.send({ insertResult, insertHistory });
     });
 
-    app.get("/history/:email", async(req, res) => {
+    app.get("/history/:email", async (req, res) => {
       const email = req.params.email;
-      if(!email){
+      if (!email) {
         res.send([])
       }
-      const query = {email: email}
+      const query = { email: email }
       const result = await paymentHistory.find(query).toArray()
       res.send(result)
     })
 
-    app.get("/history", async(req, res) =>{
+    app.get("/history", async (req, res) => {
       const result = await paymentHistory.find().toArray()
       res.send(result)
     })
