@@ -108,7 +108,7 @@ async function run() {
       const userEmail = req.body;
       console.log(userEmail);
       const token = jwt.sign(userEmail, `${process.env.SECRETE_TOKEN}`, {
-        expiresIn: "1h",
+        expiresIn: "24h",
       });
       res.send({ token });
     });
@@ -137,12 +137,19 @@ async function run() {
       const result = await questionCollection.findOne(query);
       res.send(result);
     });
-    
-    ///// post result ----------------------------------------new Abir
-    app.post('/result',async(req,res)=>{
-      //// need to work here
-    })
 
+    ///// post get result ----------------------------------------new Abir
+    app.get('/result',async(req,res)=>{
+      //// need to work here
+      const id =req.query.id
+      console.log(id)
+    })
+    app.post('/examdata',async(req,res)=>{
+      const data=req.body
+      const result=await resultCollection.insertOne(data)
+      res.send(result)
+      console.log(data)
+    })
     ///////////////////////////////////
 
     app.get("/users", async (req, res) => {
@@ -176,10 +183,8 @@ app.patch('/updateProfile',async(req,res)=>{
       mobile:data.mobile,
       photoURL:data.photoURL
     }}
-  console.log(data,email)
   const result=await userCollection.updateOne(query,doc,options)
   res.send(result)
-  console.log(result)
 })
 
     //get user info ------------------------------------------------------new abir
@@ -187,7 +192,7 @@ app.patch('/updateProfile',async(req,res)=>{
     app.get('/user',async(req,res)=>{
       const email=req.query.email
       const query={email:email}
-      console.log('get profile info:',email)
+
       const result=await userCollection.findOne(query)
       res.send(result)
     })
