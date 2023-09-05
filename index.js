@@ -100,6 +100,8 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("paymentHistory");
 
+      const noticeCollection = client.db("E-ExaminationPro").collection("notices");
+
     ///// JWT /////
     app.post("/jwt", (req, res) => {
       const userEmail = req.body;
@@ -359,6 +361,23 @@ async function run() {
       const result = await instructorsCollection.find().toArray();
       res.send(result);
     });
+
+
+    ////////////////// Notice ////////////////////----------HR
+    app.post('/notice', async(req, res) =>{
+      const noticeInfo = req.body;
+      const result = await noticeCollection.insertOne(noticeInfo)
+      res.send(result)
+    })
+
+    app.get("/notice", async(req, res) =>{
+      const result = await noticeCollection.find().toArray()
+      res.send(result)
+
+    })
+    
+
+    /////////////////notice////////////////////
 
     // payment system
     app.post("/create-payment-intent", async (req, res) => {
