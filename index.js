@@ -104,12 +104,16 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("result_Collection");
 
+    const forumCollection = client
+      .db("E-ExaminationPro")
+      .collection("forumCommunity")
+
     ///// JWT /////
     app.post("/jwt", (req, res) => {
       const userEmail = req.body;
       console.log(userEmail);
       const token = jwt.sign(userEmail, `${process.env.SECRETE_TOKEN}`, {
-        expiresIn: "1h",
+        expiresIn: "7d",
       });
       res.send({ token });
     });
@@ -407,6 +411,17 @@ async function run() {
         res.status(500).json({ error: "Internal server error" });
       }
     });
+
+    /* forum communication */
+    app.post("/forumPost", async (req, res) => {
+      const forum = req.body;
+      const result = await forumCollection.insertOne(forum)
+      res.send(result)
+    })
+    app.get("/forumPost", async (req, res) => {
+      const result = await forumCollection.find().toArray()
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
