@@ -1,3 +1,4 @@
 node_modules
 .env
+END_GAME_WORKSPACE.code-workspace
 .vercel

@@ -60,10 +60,14 @@ async function run() {
     // await client.connect();
 
     // Database collection
+    let tempCollection;
     const userCollection = client.db("E-ExaminationPro").collection("users");
     const shortQuestionCollection = client
       .db("E-ExaminationPro")
       .collection("shortQuestions");
+    const longQuestionCollection = client
+      .db("E-ExaminationPro")
+      .collection("longQuestions");
     const quizQuestionCollection = client
       .db("E-ExaminationPro")
       .collection("quizQuestions");
@@ -101,7 +105,7 @@ async function run() {
       const userEmail = req.body;
       console.log(userEmail);
       const token = jwt.sign(userEmail, `${process.env.SECRETE_TOKEN}`, {
-        expiresIn: "1h",
+        expiresIn: "7d",
       });
       res.send({ token });
     });
@@ -130,8 +134,22 @@ async function run() {
       const result = await questionCollection.findOne(query);
       res.send(result);
     });
+
+    ///// post get result ----------------------------------------new Abir
+    app.get("/result", async (req, res) => {
+      //// need to work here
+      const id = req.query.id;
+      console.log(id);
+    });
+    app.post("/examdata", async (req, res) => {
+      const data = req.body;
+      const result = await resultCollection.insertOne(data);
+      res.send(result);
+      console.log(data);
+    });
     ///////////////////////////////////
 
+    ////////////////User Get,///////////////////
     app.get("/users", async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
@@ -149,11 +167,40 @@ async function run() {
       res.send(result);
     });
 
+    //////////////updatePRofile////// ----------------------------------------new abir
+    app.patch("/updateProfile", async (req, res) => {
+      const email = req.query.email;
+      const data = req.body;
+      const query = { email: email };
+      const options = { upsert: true };
+      const doc = {
+        $set: {
+          batch: data.batch,
+          gender: data.gender,
+          address: data.address,
+          mobile: data.mobile,
+          photoURL: data.photoURL,
+        },
+      };
+      const result = await userCollection.updateOne(query, doc, options);
+      res.send(result);
+    });
+
+    //get user info ------------------------------------------------------new abir
+
+    app.get("/user", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+
+    ///-end
     // find Admin from database
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
 
-      console.log("user", req.decoded.email);
       if (req.decoded.email !== email) {
         return res.send({ admin: false });
       }
@@ -266,6 +313,25 @@ async function run() {
       const result = await shortQuestionCollection.deleteOne(query);
       res.send(result);
     });
+    /**=========================
+     * Long question api's
+     * ====================
+     */
+    // get long question from database
+    app.get("/longQ", async (req, res) => {
+      const subject = req.query.subject;
+      console.log(subject);
+      const query = { subject: subject };
+      const result = await longQuestionCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Post long question from database
+    app.post("/longQ", async (req, res) => {
+      const addLongQ = req.body;
+      const result = await longQuestionCollection.insertOne(addLongQ);
+      res.send(result);
+    });
 
     // get fill in the blank question from database
     app.get("/blankQ", async (req, res) => {
@@ -294,8 +360,7 @@ async function run() {
       res.send(result);
     });
 
-
-    //-------- payment system----------//
+    // payment system
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = price * 100;
@@ -317,20 +382,20 @@ async function run() {
       res.send({ insertResult, insertHistory });
     });
 
-    app.get("/history/:email", async(req, res) => {
+    app.get("/history/:email", async (req, res) => {
       const email = req.params.email;
-      if(!email){
-        res.send([])
+      if (!email) {
+        res.send([]);
       }
-      const query = {email: email}
-      const result = await paymentHistory.find(query).toArray()
-      res.send(result)
-    })
+      const query = { email: email };
+      const result = await paymentHistory.find(query).toArray();
+      res.send(result);
+    });
 
-    app.get("/history", async(req, res) =>{
-      const result = await paymentHistory.find().toArray()
-      res.send(result)
-    })
+    app.get("/history", async (req, res) => {
+      const result = await paymentHistory.find().toArray();
+      res.send(result);
+    });
 
     // resolving cors issue when trying to fetch directly data from external api's to frontend so we have to use a proxy server to do that
     app.get("/api/quotes", async (req, res) => {
