@@ -401,7 +401,7 @@ async function run() {
       query0={email:instructorEmail}
       result = await userCollection.findOne(query0)
       console.log(result)
-      if(result.role=='instructor'){
+      if(result?.role=='instructor'){
         const result = await noticeCollection.find(query0).toArray()
         return res.send(result)
       }
