@@ -36,18 +36,14 @@ const client = new MongoClient(uri, {
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
   if (!authorization) {
-    return res
-      .status(401)
-      .send({ error: true, message: "unauthorized access" });
+    return res.status(401).send({ error: true, message: "unauthorized access" });
   }
   //bearer token
   const token = authorization.split(" ")[1];
 
   jwt.verify(token, process.env.SECRETE_TOKEN, (err, decoded) => {
     if (err) {
-      return res
-        .status(401)
-        .send({ error: true, message: "unauthorized access" });
+      return res.status(401).send({ error: true, message: "unauthorized access" });
     }
     req.decoded = decoded;
     next();
@@ -100,10 +96,12 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("paymentHistory");
 
-      const noticeCollection = client.db("E-ExaminationPro").collection("notices");
+    const noticeCollection = client.db("E-ExaminationPro").collection("notices");
+    const applyedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
 
     ///// JWT /////
     app.post("/jwt", (req, res) => {
+      console.log('hit jwt 107')
       const userEmail = req.body;
       console.log(userEmail);
       const token = jwt.sign(userEmail, `${process.env.SECRETE_TOKEN}`, {
@@ -122,6 +120,26 @@ async function run() {
       console.log(question);
       const result = await questionCollection.insertOne(question);
       res.send(result);
+    });
+    ///----------------------------------------------------------------------applied live exam list
+    app.post("/appliedLiveExam", async (req, res) => {
+      const info = req.body;
+      const studentEmail = req.query.studentEmail
+      const exam_id = req.query.examId
+      const query = {
+        $and: [
+          { student_email: studentEmail },
+          { examID: exam_id }
+        ]
+      }
+      const existingUser = await applyedLiveExamCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ msg: "Allredy Applied" });
+      }
+      else {
+        const result = await applyedLiveExamCollection.insertOne(info);
+        res.send(result);
+      }
     });
     app.get("/questionPaper", async (req, res) => {
       const type = req.query.type;
@@ -151,10 +169,18 @@ async function run() {
     });
     ///////////////////////////////////
 
-    ////////////////User Get,///////////////////
+    ////////////////User Get,///////////////////--------------------------------------------abir
     app.get("/users", async (req, res) => {
-      const result = await userCollection.find().toArray();
-      res.send(result);
+      const email = req.query.email
+      const query = { email: email }
+      if (email) {
+        const result = await userCollection.findOne(query)
+        return res.send(result);
+      }
+      else {
+        const result = await userCollection.find().toArray();
+        return res.send(result);
+      }
     });
 
     //post user in database
@@ -202,7 +228,7 @@ async function run() {
     // find Admin from database
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-
+      console.log(req.decoded.email, 'line 205')
       if (req.decoded.email !== email) {
         return res.send({ admin: false });
       }
@@ -215,7 +241,7 @@ async function run() {
     // find instructor from database
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-
+      console.log(req.decoded.email, 'line 218')
       if (req.decoded.email !== email) {
         return res.send({ instructor: false });
       }
@@ -364,18 +390,50 @@ async function run() {
 
 
     ////////////////// Notice ////////////////////----------HR
-    app.post('/notice', async(req, res) =>{
+    app.post('/notice', async (req, res) => {
       const noticeInfo = req.body;
       const result = await noticeCollection.insertOne(noticeInfo)
       res.send(result)
     })
+    //---------------------------------------------------------------------------also abir
+    app.get("/notice", async (req, res) => {
+      const instructorEmail=req.query.instructor
+      query0={email:instructorEmail}
+      result = await userCollection.findOne(query0)
+      console.log(result)
+      if(result.role=='instructor'){
+        const result = await noticeCollection.find(query0).toArray()
+        return res.send(result)
+      }
 
-    app.get("/notice", async(req, res) =>{
-      const result = await noticeCollection.find().toArray()
-      res.send(result)
+      const exam_id = req.query.id
+      const student_email = req.query.student_email
+      if (exam_id) {
+
+        const query1 = {
+          $and: [
+            { student_email: student_email },
+            { examID: exam_id }
+          ]
+        }
+        const existingUser = await applyedLiveExamCollection.findOne(query1);
+        console.log(existingUser,'line 412',exam_id,student_email)
+        if (existingUser) {
+          console.log('hit line 413')
+          return res.send({ msg: "Allredy Applied" });
+        }
+
+        const query2 = { _id: new ObjectId(exam_id) }
+        const result = await noticeCollection.findOne(query2)
+        return res.send(result)
+      }
+      else {
+        const result = await noticeCollection.find().toArray()
+        return res.send(result)
+      }
 
     })
-    
+
 
     /////////////////notice////////////////////
 
