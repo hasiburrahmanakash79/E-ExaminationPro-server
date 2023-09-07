@@ -99,6 +99,8 @@ async function run() {
     const noticeCollection = client.db("E-ExaminationPro").collection("notices");
     const applyedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
     const liveExamQuestionCollection = client.db("E-ExaminationPro").collection("liveExamQuestions");
+    const resultCollection = client.db("E-ExaminationPro").collection("result_Collection");
+
 
     ///// JWT /////
     app.post("/jwt", (req, res) => {
@@ -143,9 +145,9 @@ async function run() {
       }
     });
 
-    app.get('/appliedLiveExam',async(req,res)=>{
-      const email=req.query.studentEmail
-      const query={student_email:email}
+    app.get('/appliedLiveExam', async (req, res) => {
+      const email = req.query.studentEmail
+      const query = { student_email: email }
       const result = await applyedLiveExamCollection.find(query).toArray();
       res.send(result);
     })
@@ -167,9 +169,11 @@ async function run() {
 
     ///// post get result ----------------------------------------new Abir
     app.get("/result", async (req, res) => {
-      //// need to work here
       const id = req.query.id;
-      console.log(id);
+      console.log('int id', id);
+      const query = { examID: id }
+      const result = await resultCollection.findOne(query)
+      res.send(result)
     });
     app.post("/examdata", async (req, res) => {
       const data = req.body;
@@ -407,19 +411,19 @@ async function run() {
     })
     //---------------------------------------------------------------------------also abir
     app.get("/notice", async (req, res) => {
-      const selectedID=req.query.selectedID
-      console.log(selectedID,'hit-----')
-      if(selectedID )  {
-        const query4={_id:new ObjectId(selectedID)}
+      const selectedID = req.query.selectedID
+      console.log(selectedID, 'hit-----')
+      if (selectedID) {
+        const query4 = { _id: new ObjectId(selectedID) }
         const result = await noticeCollection.findOne(query4)
         return res.send(result)
       }
 
-      const instructorEmail=req.query.instructor
-      query0={email:instructorEmail}
+      const instructorEmail = req.query.instructor
+      query0 = { email: instructorEmail }
       result = await userCollection.findOne(query0)
       console.log(result)
-      if(result?.role=='instructor'){
+      if (result?.role == 'instructor') {
         const result = await noticeCollection.find(query0).toArray()
         return res.send(result)
       }
@@ -435,7 +439,7 @@ async function run() {
           ]
         }
         const existingUser = await applyedLiveExamCollection.findOne(query1);
-        console.log(existingUser,'line 412',exam_id,student_email)
+        console.log(existingUser, 'line 412', exam_id, student_email)
         if (existingUser) {
           console.log('hit line 413')
           return res.send({ msg: "Allredy Applied" });
@@ -454,25 +458,25 @@ async function run() {
 
 
     /////////////////live exam QUes////////////////////
-    app.get('/liveQuestionPaper',async(req,res)=>{
-      const id=req.query.id
-      const examCode=req.query.examCode
+    app.get('/liveQuestionPaper', async (req, res) => {
+      const id = req.query.id
+      const examCode = req.query.examCode
       const query = {
         $and: [
-          {examID: id },
-          {examCode: examCode }
+          { examID: id },
+          { examCode: examCode }
         ]
       }
-      const result=await liveExamQuestionCollection.findOne(query)
+      const result = await liveExamQuestionCollection.findOne(query)
       console.log(result)
-      res.send({code:result.secretCode})
-        
+      res.send({ code: result.secretCode })
+
     })
 
-    app.post('/liveQuestionPaper',async(req,res)=>{
-      const data=req.body
+    app.post('/liveQuestionPaper', async (req, res) => {
+      const data = req.body
       console.log(data)
-      const result=await liveExamQuestionCollection.insertOne(data)
+      const result = await liveExamQuestionCollection.insertOne(data)
       res.send(result)
     })
 
