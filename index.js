@@ -203,8 +203,11 @@ async function run() {
     ///// post get result ----------------------------------------new Abir result
     app.get("/result", async (req, res) => {
       //// need to work here
-      const id = req.query.id;
-      console.log(id);
+      const id = req.query.examId;
+      console.log(id,'----207');
+      const query={examID:id}
+      const result = await resultCollection.find(query).toArray()
+      res.send(result)
     });
     app.post("/examdata", async (req, res) => {
       const data = req.body;
