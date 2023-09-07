@@ -99,6 +99,7 @@ async function run() {
     const noticeCollection = client.db("E-ExaminationPro").collection("notices");
     const applyedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
     const liveExamQuestionCollection = client.db("E-ExaminationPro").collection("liveExamQuestions");
+    const resultCollection = client.db("E-ExaminationPro").collection("result_Collection");
 
     ///// JWT /////
     app.post("/jwt", (req, res) => {
@@ -152,11 +153,26 @@ async function run() {
 
 
     app.get("/questionPaper", async (req, res) => {
+
+      const instructor_email=req.query.instructor_email
       const type = req.query.type;
       const subject = req.query.subject;
-      const query = { subjectName: subject, type: type };
-      const result = await questionCollection.find(query).toArray();
-      res.send(result);
+
+      const query0={email:instructor_email}
+      const result1 = await userCollection.findOne(query0)
+      
+      if(result1?.role=='instructor'){
+        const query = {email:instructor_email,type:type,subjectName:subject};
+        const result = await questionCollection.find(query).toArray()
+       return res.send(result);
+      }
+      else{
+        console.log('hit-170')
+        const query = { subjectName: subject, type: type };
+        const result = await questionCollection.find(query).toArray();
+        return res.send(result);
+      }
+  
     });
     app.get("/questionPaper/:id", async (req, res) => {
       const id = req.params.id;
@@ -165,7 +181,7 @@ async function run() {
       res.send(result);
     });
 
-    ///// post get result ----------------------------------------new Abir
+    ///// post get result ----------------------------------------new Abir result
     app.get("/result", async (req, res) => {
       //// need to work here
       const id = req.query.id;
