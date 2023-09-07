@@ -422,6 +422,17 @@ async function run() {
       const result = await forumCollection.find().toArray()
       res.send(result)
     })
+    app.patch("/forumPost", async (req, res) => {
+      const comment = req.body;
+      const filterUserId = { _id: new ObjectId(id) };
+      const updateStatus = {
+        $set: {
+          article: comment.article,
+        },
+      };
+      const result = await forumCollection.updateOne(filterUserId, updateStatus);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
