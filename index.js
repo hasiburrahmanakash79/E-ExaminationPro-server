@@ -157,7 +157,7 @@ async function run() {
       const instructor_email=req.query.instructor_email
       const type = req.query.type;
       const subject = req.query.subject;
-
+      console.log(instructor_email,'-------------line 160')
       const query0={email:instructor_email}
       const result1 = await userCollection.findOne(query0)
       
@@ -169,8 +169,27 @@ async function run() {
       else{
         console.log('hit-170')
         const query = { subjectName: subject, type: type };
-        const result = await questionCollection.find(query).toArray();
-        return res.send(result);
+        const allQuestion = await questionCollection.find(query).toArray();
+        //console.log(allQuestion,'-------------------------------------173')
+        const query2={
+          stu_email:instructor_email
+          }
+        const examResult=await resultCollection.find(query2).toArray();
+        console.log(examResult)
+        const response2 = allQuestion.map((question) => console.log(question._id.toString(),'-------------line 175'))
+        const response1 = examResult.map((question) => console.log(question.examID.toString(),'-------------line 176'))
+
+        const response = allQuestion.map((question) => ({
+          ...question,
+            isCompleted: examResult.some(
+            (result) =>
+             result.examID === question._id.toString()
+            )
+            ? true
+            : false,
+        }))
+        console.log(response)
+        res.send(response)
       }
   
     });
