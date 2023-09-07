@@ -98,6 +98,7 @@ async function run() {
 
     const noticeCollection = client.db("E-ExaminationPro").collection("notices");
     const applyedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
+    const liveExamQuestionCollection = client.db("E-ExaminationPro").collection("liveExamQuestions");
 
     ///// JWT /////
     app.post("/jwt", (req, res) => {
@@ -141,6 +142,15 @@ async function run() {
         res.send(result);
       }
     });
+
+    app.get('/appliedLiveExam',async(req,res)=>{
+      const email=req.query.studentEmail
+      const query={student_email:email}
+      const result = await applyedLiveExamCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
     app.get("/questionPaper", async (req, res) => {
       const type = req.query.type;
       const subject = req.query.subject;
@@ -397,6 +407,14 @@ async function run() {
     })
     //---------------------------------------------------------------------------also abir
     app.get("/notice", async (req, res) => {
+      const selectedID=req.query.selectedID
+      console.log(selectedID,'hit-----')
+      if(selectedID )  {
+        const query4={_id:new ObjectId(selectedID)}
+        const result = await noticeCollection.findOne(query4)
+        return res.send(result)
+      }
+
       const instructorEmail=req.query.instructor
       query0={email:instructorEmail}
       result = await userCollection.findOne(query0)
@@ -435,7 +453,31 @@ async function run() {
     })
 
 
-    /////////////////notice////////////////////
+    /////////////////live exam QUes////////////////////
+    app.get('/liveQuestionPaper',async(req,res)=>{
+      const id=req.query.id
+      const examCode=req.query.examCode
+      const query = {
+        $and: [
+          {examID: id },
+          {examCode: examCode }
+        ]
+      }
+      const result=await liveExamQuestionCollection.findOne(query)
+      console.log(result)
+      res.send({code:result.secretCode})
+        
+    })
+
+    app.post('/liveQuestionPaper',async(req,res)=>{
+      const data=req.body
+      console.log(data)
+      const result=await liveExamQuestionCollection.insertOne(data)
+      res.send(result)
+    })
+
+
+
 
     // payment system
     app.post("/create-payment-intent", async (req, res) => {
