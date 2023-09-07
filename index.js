@@ -104,6 +104,34 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("result_Collection");
 
+    //---------------- bijoy
+
+    const commentCollection = client
+      .db("E-ExaminationPro")
+      .collection("comments");
+
+    app.post("/comments", async (req, res) => {
+      // const comment = req.body;
+      // if (comment) {
+      //   commentCollection.push(comment);
+      //   res.status(201).json({ message: 'Comment added successfully' });
+      // } else {
+      //   res.status(400).json({ message: 'Invalid comment data' });
+      // }
+
+      const comment = req.body;
+      console.log(comment);
+      const result = await commentCollection.insertOne(comment);
+      res.send(result);
+    })
+
+    app.get('/comments', async (req, res) => {
+      const result = await commentCollection.find().toArray();
+      res.send(result)
+    })
+
+
+
     ///// JWT /////
     app.post("/jwt", (req, res) => {
       const userEmail = req.body;
