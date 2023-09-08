@@ -176,9 +176,9 @@ async function run() {
       }
     });
 
-    app.get('/appliedLiveExam',async(req,res)=>{
-      const email=req.query.studentEmail
-      const query={student_email:email}
+    app.get('/appliedLiveExam', async (req, res) => {
+      const email = req.query.studentEmail
+      const query = { student_email: email }
       const result = await applyedLiveExamCollection.find(query).toArray();
       res.send(result);
     })
@@ -477,19 +477,19 @@ async function run() {
     })
     //---------------------------------------------------------------------------also abir
     app.get("/notice", async (req, res) => {
-      const selectedID=req.query.selectedID
-      console.log(selectedID,'hit-----')
-      if(selectedID )  {
-        const query4={_id:new ObjectId(selectedID)}
+      const selectedID = req.query.selectedID
+      console.log(selectedID, 'hit-----')
+      if (selectedID) {
+        const query4 = { _id: new ObjectId(selectedID) }
         const result = await noticeCollection.findOne(query4)
         return res.send(result)
       }
 
-      const instructorEmail=req.query.instructor
-      query0={email:instructorEmail}
+      const instructorEmail = req.query.instructor
+      query0 = { email: instructorEmail }
       result = await userCollection.findOne(query0)
       console.log(result)
-      if(result?.role=='instructor'){
+      if (result?.role == 'instructor') {
         const result = await noticeCollection.find(query0).toArray()
         return res.send(result)
       }
@@ -505,7 +505,7 @@ async function run() {
           ]
         }
         const existingUser = await applyedLiveExamCollection.findOne(query1);
-        console.log(existingUser,'line 412',exam_id,student_email)
+        console.log(existingUser, 'line 412', exam_id, student_email)
         if (existingUser) {
           console.log('hit line 413')
           return res.send({ msg: "Allredy Applied" });
@@ -524,25 +524,25 @@ async function run() {
 
 
     /////////////////live exam QUes////////////////////
-    app.get('/liveQuestionPaper',async(req,res)=>{
-      const id=req.query.id
-      const examCode=req.query.examCode
+    app.get('/liveQuestionPaper', async (req, res) => {
+      const id = req.query.id
+      const examCode = req.query.examCode
       const query = {
         $and: [
-          {examID: id },
-          {examCode: examCode }
+          { examID: id },
+          { examCode: examCode }
         ]
       }
-      const result=await liveExamQuestionCollection.findOne(query)
+      const result = await liveExamQuestionCollection.findOne(query)
       console.log(result)
-      res.send({code:result.secretCode})
-        
+      res.send({ code: result.secretCode })
+
     })
 
-    app.post('/liveQuestionPaper',async(req,res)=>{
-      const data=req.body
+    app.post('/liveQuestionPaper', async (req, res) => {
+      const data = req.body
       console.log(data)
-      const result=await liveExamQuestionCollection.insertOne(data)
+      const result = await liveExamQuestionCollection.insertOne(data)
       res.send(result)
     })
 
@@ -608,18 +608,28 @@ async function run() {
       const result = await forumCollection.find().toArray()
       res.send(result)
     })
-    app.patch("/forumPost", async (req, res) => {
-      const comment = req.body;
-      const filterUserId = { _id: new ObjectId(id) };
+    app.patch("/forumPost/:id", async (req, res) => {
+      const commentId = req.params.id; // Get comment ID from the URL
+      const updatedComment = req.body; // Get the updated comment data from the request body
+    
+      const filterCommentId = { _id: new ObjectId(commentId) };
       const updateStatus = {
         $set: {
-          article: comment.article,
+          article: updatedComment.article,
         },
       };
-      const result = await forumCollection.updateOne(filterUserId, updateStatus);
-      res.send(result);
+      try {
+        const result = await forumCollection.updateOne(filterCommentId, updateStatus);
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ error: "Comment not found" });
+        }
+        res.status(200).json({ message: "Comment updated successfully" });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+      }
     });
-
+    
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log(
