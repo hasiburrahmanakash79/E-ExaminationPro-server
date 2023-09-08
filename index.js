@@ -101,6 +101,33 @@ async function run() {
     const liveExamQuestionCollection = client.db("E-ExaminationPro").collection("liveExamQuestions");
     const resultCollection = client.db("E-ExaminationPro").collection("result_Collection");
 
+    //---------------- bijoy
+
+    const commentCollection = client
+      .db("E-ExaminationPro")
+      .collection("comments");
+
+    app.post("/comments", async (req, res) => {
+      // const comment = req.body;
+      // if (comment) {
+      //   commentCollection.push(comment);
+      //   res.status(201).json({ message: 'Comment added successfully' });
+      // } else {
+      //   res.status(400).json({ message: 'Invalid comment data' });
+      // }
+
+      const comment = req.body;
+      console.log(comment);
+      const result = await commentCollection.insertOne(comment);
+      res.send(result);
+    })
+
+    app.get('/comments', async (req, res) => {
+      const result = await commentCollection.find().toArray();
+      res.send(result)
+    })
+
+
 
     const forumCollection = client
       .db("E-ExaminationPro")
@@ -158,11 +185,45 @@ async function run() {
 
 
     app.get("/questionPaper", async (req, res) => {
+
+      const instructor_email=req.query.instructor_email
       const type = req.query.type;
       const subject = req.query.subject;
-      const query = { subjectName: subject, type: type };
-      const result = await questionCollection.find(query).toArray();
-      res.send(result);
+      console.log(instructor_email,'-------------line 160')
+      const query0={email:instructor_email}
+      const result1 = await userCollection.findOne(query0)
+      
+      if(result1?.role=='instructor'){
+        const query = {email:instructor_email,type:type,subjectName:subject};
+        const result = await questionCollection.find(query).toArray()
+       return res.send(result);
+      }
+      else{
+        console.log('hit-170')
+        const query = { subjectName: subject, type: type };
+        const allQuestion = await questionCollection.find(query).toArray();
+        //console.log(allQuestion,'-------------------------------------173')
+        const query2={
+          stu_email:instructor_email
+          }
+        const examResult=await resultCollection.find(query2).toArray();
+        console.log(examResult)
+        const response2 = allQuestion.map((question) => console.log(question._id.toString(),'-------------line 175'))
+        const response1 = examResult.map((question) => console.log(question.examID.toString(),'-------------line 176'))
+
+        const response = allQuestion.map((question) => ({
+          ...question,
+            isCompleted: examResult.some(
+            (result) =>
+             result.examID === question._id.toString()
+            )
+            ? true
+            : false,
+        }))
+        console.log(response)
+        res.send(response)
+      }
+  
     });
     app.get("/questionPaper/:id", async (req, res) => {
       const id = req.params.id;
@@ -171,12 +232,13 @@ async function run() {
       res.send(result);
     });
 
-    ///// post get result ----------------------------------------new Abir
+    ///// post get result ----------------------------------------new Abir result
     app.get("/result", async (req, res) => {
-      const id = req.query.id;
-      console.log('int id', id);
-      const query = { examID: id }
-      const result = await resultCollection.findOne(query)
+      //// need to work here
+      const id = req.query.examId;
+      console.log(id,'----207');
+      const query={examID:id}
+      const result = await resultCollection.find(query).toArray()
       res.send(result)
     });
     app.post("/examdata", async (req, res) => {
