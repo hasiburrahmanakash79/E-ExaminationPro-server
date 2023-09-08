@@ -129,6 +129,10 @@ async function run() {
 
 
 
+    const forumCollection = client
+      .db("E-ExaminationPro")
+      .collection("forumCommunity")
+
     ///// JWT /////
     app.post("/jwt", (req, res) => {
       console.log('hit jwt 107')
@@ -592,6 +596,28 @@ async function run() {
       } catch (error) {
         res.status(500).json({ error: "Internal server error" });
       }
+    });
+
+    /* forum communication */
+    app.post("/forumPost", async (req, res) => {
+      const forum = req.body;
+      const result = await forumCollection.insertOne(forum)
+      res.send(result)
+    })
+    app.get("/forumPost", async (req, res) => {
+      const result = await forumCollection.find().toArray()
+      res.send(result)
+    })
+    app.patch("/forumPost", async (req, res) => {
+      const comment = req.body;
+      const filterUserId = { _id: new ObjectId(id) };
+      const updateStatus = {
+        $set: {
+          article: comment.article,
+        },
+      };
+      const result = await forumCollection.updateOne(filterUserId, updateStatus);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
