@@ -99,8 +99,9 @@ async function run() {
     const paymentHistory = client
       .db("E-ExaminationPro")
       .collection("paymentHistory");
-
       const noticeCollection = client.db("E-ExaminationPro").collection("notices");
+
+      const pricingCollection = client.db("E-ExaminationPro").collection("packagePricing");
 
     ///// JWT /////
     app.post("/jwt", (req, res) => {
@@ -375,9 +376,13 @@ async function run() {
       res.send(result)
 
     })
-    
-
     /////////////////notice////////////////////
+
+    // Pricing 
+    app.get("/price", async(req, res) => {
+      const price = await pricingCollection.find().toArray()
+      res.send(price)
+    })
 
     // payment system
     app.post("/create-payment-intent", async (req, res) => {
@@ -395,7 +400,7 @@ async function run() {
 
     app.post("/payments", verifyJWT, async (req, res) => {
       const payment = req.body;
-      console.log(payment);
+      console.log("Payment", payment);
       const insertResult = await paymentCollection.insertOne(payment);
       const insertHistory = await paymentHistory.insertOne(payment);
       res.send({ insertResult, insertHistory });
