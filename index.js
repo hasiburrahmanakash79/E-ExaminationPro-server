@@ -546,18 +546,28 @@ async function run() {
       const result = await forumCollection.find().toArray()
       res.send(result)
     })
-    app.patch("/forumPost", async (req, res) => {
-      const comment = req.body;
-      const filterUserId = { _id: new ObjectId(id) };
+    app.patch("/forumPost/:id", async (req, res) => {
+      const commentId = req.params.id; // Get comment ID from the URL
+      const updatedComment = req.body; // Get the updated comment data from the request body
+    
+      const filterCommentId = { _id: new ObjectId(commentId) };
       const updateStatus = {
         $set: {
-          article: comment.article,
+          article: updatedComment.article,
         },
       };
-      const result = await forumCollection.updateOne(filterUserId, updateStatus);
-      res.send(result);
+      try {
+        const result = await forumCollection.updateOne(filterCommentId, updateStatus);
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ error: "Comment not found" });
+        }
+        res.status(200).json({ message: "Comment updated successfully" });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+      }
     });
-
+    
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log(
