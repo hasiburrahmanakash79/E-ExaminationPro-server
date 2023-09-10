@@ -100,6 +100,7 @@ async function run() {
     const appliedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
     const liveExamQuestionCollection = client.db("E-ExaminationPro").collection("liveExamQuestions");
     const resultCollection = client.db("E-ExaminationPro").collection("result_Collection");
+    const blogsCollection = client.db("E-ExaminationPro").collection("blogs");
 
     //---------------- bijoy
 
@@ -276,6 +277,15 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
+
+    // Delete User
+    app.delete("/users/:id", async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await userCollection.deleteOne(query)
+      res.send(result)
+    });
+
 
     //////////////updatePRofile////// ----------------------------------------new abir
     app.patch("/updateProfile", async (req, res) => {
