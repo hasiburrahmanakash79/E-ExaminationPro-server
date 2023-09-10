@@ -36,18 +36,14 @@ const client = new MongoClient(uri, {
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
   if (!authorization) {
-    return res
-      .status(401)
-      .send({ error: true, message: "unauthorized access" });
+    return res.status(401).send({ error: true, message: "unauthorized access" });
   }
   //bearer token
   const token = authorization.split(" ")[1];
 
   jwt.verify(token, process.env.SECRETE_TOKEN, (err, decoded) => {
     if (err) {
-      return res
-        .status(401)
-        .send({ error: true, message: "unauthorized access" });
+      return res.status(401).send({ error: true, message: "unauthorized access" });
     }
     req.decoded = decoded;
     next();
@@ -100,8 +96,49 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("paymentHistory");
 
+    const noticeCollection = client.db("E-ExaminationPro").collection("notices");
+    const appliedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
+    const liveExamQuestionCollection = client.db("E-ExaminationPro").collection("liveExamQuestions");
+    const resultCollection = client.db("E-ExaminationPro").collection("result_Collection");
+    const blogsCollection = client.db("E-ExaminationPro").collection("blogs");
+
+    //---------------- bijoy
+
+    const commentCollection = client
+      .db("E-ExaminationPro")
+      .collection("comments");
+
+    app.post("/comments", async (req, res) => {
+      // const comment = req.body;
+      // if (comment) {
+      //   commentCollection.push(comment);
+      //   res.status(201).json({ message: 'Comment added successfully' });
+      // } else {
+      //   res.status(400).json({ message: 'Invalid comment data' });
+      // }
+
+      const comment = req.body;
+      console.log(comment);
+      const result = await commentCollection.insertOne(comment);
+      res.send(result);
+    })
+
+    app.get('/comments', async (req, res) => {
+      const result = await commentCollection.find().toArray();
+      res.send(result)
+    })
+
+
+
+    const forumCollection = client
+      .db("E-ExaminationPro")
+      .collection("forumCommunity")
+
+      const pricingCollection = client.db("E-ExaminationPro").collection("packagePricing");
+
     ///// JWT /////
     app.post("/jwt", (req, res) => {
+      console.log('hit jwt 107')
       const userEmail = req.body;
       console.log(userEmail);
       const token = jwt.sign(userEmail, `${process.env.SECRETE_TOKEN}`, {
@@ -121,12 +158,75 @@ async function run() {
       const result = await questionCollection.insertOne(question);
       res.send(result);
     });
+    ///----------------------------------------------------------------------applied live exam list
+    app.post("/appliedLiveExam", async (req, res) => {
+      const info = req.body;
+      const studentEmail = req.query.studentEmail
+      const exam_id = req.query.examId
+      const query = {
+        $and: [
+          { student_email: studentEmail },
+          { examID: exam_id }
+        ]
+      }
+      const existingUser = await appliedLiveExamCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ msg: "Allredy Applied" });
+      }
+      else {
+        const result = await appliedLiveExamCollection.insertOne(info);
+        res.send(result);
+      }
+    });
+
+    app.get('/appliedLiveExam',async(req,res)=>{
+      const email=req.query.studentEmail
+      const query={student_email:email}
+      const result = await appliedLiveExamCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
     app.get("/questionPaper", async (req, res) => {
+
+      const instructor_email=req.query.instructor_email
       const type = req.query.type;
       const subject = req.query.subject;
-      const query = { subjectName: subject, type: type };
-      const result = await questionCollection.find(query).toArray();
-      res.send(result);
+      console.log(instructor_email,'-------------line 160')
+      const query0={email:instructor_email}
+      const result1 = await userCollection.findOne(query0)
+      
+      if(result1?.role=='instructor'){
+        const query = {email:instructor_email,type:type,subjectName:subject};
+        const result = await questionCollection.find(query).toArray()
+       return res.send(result);
+      }
+      else{
+        console.log('hit-170')
+        const query = { subjectName: subject, type: type };
+        const allQuestion = await questionCollection.find(query).toArray();
+        //console.log(allQuestion,'-------------------------------------173')
+        const query2={
+          stu_email:instructor_email
+          }
+        const examResult=await resultCollection.find(query2).toArray();
+        console.log(examResult)
+        const response2 = allQuestion.map((question) => console.log(question._id.toString(),'-------------line 175'))
+        const response1 = examResult.map((question) => console.log(question.examID.toString(),'-------------line 176'))
+
+        const response = allQuestion.map((question) => ({
+          ...question,
+            isCompleted: examResult.some(
+            (result) =>
+             result.examID === question._id.toString()
+            )
+            ? true
+            : false,
+        }))
+        console.log(response)
+        res.send(response)
+      }
+  
     });
     app.get("/questionPaper/:id", async (req, res) => {
       const id = req.params.id;
@@ -135,11 +235,14 @@ async function run() {
       res.send(result);
     });
 
-    ///// post get result ----------------------------------------new Abir
+    ///// post get result ----------------------------------------new Abir result
     app.get("/result", async (req, res) => {
       //// need to work here
-      const id = req.query.id;
-      console.log(id);
+      const id = req.query.examId;
+      console.log(id,'----207');
+      const query={examID:id}
+      const result = await resultCollection.find(query).toArray()
+      res.send(result)
     });
     app.post("/examdata", async (req, res) => {
       const data = req.body;
@@ -149,10 +252,18 @@ async function run() {
     });
     ///////////////////////////////////
 
-    ////////////////User Get,///////////////////
+    ////////////////User Get,///////////////////--------------------------------------------abir
     app.get("/users", async (req, res) => {
-      const result = await userCollection.find().toArray();
-      res.send(result);
+      const email = req.query.email
+      const query = { email: email }
+      if (email) {
+        const result = await userCollection.findOne(query)
+        return res.send(result);
+      }
+      else {
+        const result = await userCollection.find().toArray();
+        return res.send(result);
+      }
     });
 
     //post user in database
@@ -166,6 +277,15 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
+
+    // Delete User
+    app.delete("/users/:id", async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await userCollection.deleteOne(query)
+      res.send(result)
+    });
+
 
     //////////////updatePRofile////// ----------------------------------------new abir
     app.patch("/updateProfile", async (req, res) => {
@@ -200,7 +320,7 @@ async function run() {
     // find Admin from database
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-
+      console.log(req.decoded.email, 'line 205')
       if (req.decoded.email !== email) {
         return res.send({ admin: false });
       }
@@ -213,7 +333,7 @@ async function run() {
     // find instructor from database
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-
+      console.log(req.decoded.email, 'line 218')
       if (req.decoded.email !== email) {
         return res.send({ instructor: false });
       }
@@ -360,6 +480,93 @@ async function run() {
       res.send(result);
     });
 
+
+    ////////////////// Notice ////////////////////----------HR
+    app.post('/notice', async (req, res) => {
+      const noticeInfo = req.body;
+      const result = await noticeCollection.insertOne(noticeInfo)
+      res.send(result)
+    })
+    //---------------------------------------------------------------------------also abir
+    app.get("/notice", async (req, res) => {
+      const selectedID=req.query.selectedID
+      console.log(selectedID,'hit-----')
+      if(selectedID )  {
+        const query4={_id:new ObjectId(selectedID)}
+        const result = await noticeCollection.findOne(query4)
+        return res.send(result)
+      }
+
+      const instructorEmail=req.query.instructor
+      query0={email:instructorEmail}
+      result = await userCollection.findOne(query0)
+      console.log(result)
+      if(result?.role=='instructor'){
+        const result = await noticeCollection.find(query0).toArray()
+        return res.send(result)
+      }
+
+      const exam_id = req.query.id
+      const student_email = req.query.student_email
+      if (exam_id) {
+
+        const query1 = {
+          $and: [
+            { student_email: student_email },
+            { examID: exam_id }
+          ]
+        }
+        const existingUser = await appliedLiveExamCollection.findOne(query1);
+        console.log(existingUser,'line 412',exam_id,student_email)
+        if (existingUser) {
+          console.log('hit line 413')
+          return res.send({ msg: "Allredy Applied" });
+        }
+
+        const query2 = { _id: new ObjectId(exam_id) }
+        const result = await noticeCollection.findOne(query2)
+        return res.send(result)
+      }
+      else {
+        const result = await noticeCollection.find().toArray()
+        return res.send(result)
+      }
+
+    })
+
+
+    /////////////////live exam QUes////////////////////
+    app.get('/liveQuestionPaper',async(req,res)=>{
+      const id=req.query.id
+      const examCode=req.query.examCode
+      const query = {
+        $and: [
+          {examID: id },
+          {examCode: examCode }
+        ]
+      }
+      const result=await liveExamQuestionCollection.findOne(query)
+      console.log(result)
+      res.send({code:result.secretCode})
+        
+    })
+
+    app.post('/liveQuestionPaper',async(req,res)=>{
+      const data=req.body
+      console.log(data)
+      const result=await liveExamQuestionCollection.insertOne(data)
+      res.send(result)
+    })
+
+
+
+
+    // Pricing 
+    app.get("/price", async(req, res) => {
+      const price = await pricingCollection.find().toArray()
+      res.send(price)
+    })
+
     // payment system
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
@@ -376,7 +583,7 @@ async function run() {
 
     app.post("/payments", verifyJWT, async (req, res) => {
       const payment = req.body;
-      console.log(payment);
+      console.log("Payment", payment);
       const insertResult = await paymentCollection.insertOne(payment);
       const insertHistory = await paymentHistory.insertOne(payment);
       res.send({ insertResult, insertHistory });
@@ -407,6 +614,28 @@ async function run() {
       } catch (error) {
         res.status(500).json({ error: "Internal server error" });
       }
+    });
+
+    /* forum communication */
+    app.post("/forumPost", async (req, res) => {
+      const forum = req.body;
+      const result = await forumCollection.insertOne(forum)
+      res.send(result)
+    })
+    app.get("/forumPost", async (req, res) => {
+      const result = await forumCollection.find().toArray()
+      res.send(result)
+    })
+    app.patch("/forumPost", async (req, res) => {
+      const comment = req.body;
+      const filterUserId = { _id: new ObjectId(id) };
+      const updateStatus = {
+        $set: {
+          article: comment.article,
+        },
+      };
+      const result = await forumCollection.updateOne(filterUserId, updateStatus);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
