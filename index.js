@@ -106,10 +106,18 @@ async function run() {
 
     //---------------- bijoy
 
+    //-------------adding instructor blog
+    // const addIntructorBlogCollection = client
+    //   .db("E-ExaminationPro")
+    //   .collection("add_Blogs");
+
+
+
     const commentCollection = client
       .db("E-ExaminationPro")
       .collection("comments");
 
+    //---------showing comments
     app.post("/comments", async (req, res) => {
       // const comment = req.body;
       // if (comment) {
@@ -130,6 +138,21 @@ async function run() {
       res.send(result)
     })
 
+
+
+    //------------for adding blogs by instructor
+    // app.post('/add_Blogs', async (req, res) => {
+    //   const addedBlog = req.body;
+    //   console.log(addedBlog);
+    //   const result = await addIntructorBlogCollection.insertOne(addedBlog);
+    //   res.send(result)
+    // })
+
+    // app.get("/add_Blogs", async (req, res) => {
+    //   const cursor = addIntructorBlogCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result)
+    // })
 
 
     ///// JWT /////
