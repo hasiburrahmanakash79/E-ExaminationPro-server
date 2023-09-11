@@ -6,7 +6,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.PAYMENT_SECRETE_KEY);
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 4000;
 
 // Middleware
 const corsConfig = {
@@ -152,7 +152,13 @@ async function run() {
     app.post("/questionPaper", async (req, res) => {
       const question = req.body;
       console.log(question);
-      const result = await questionCollection.insertOne(question);
+      const query = { exam_code: question.exam_code }
+      const existingUser = await questionCollection.findOne(query);
+      if (existingUser) {
+        const result = { code: 'duplicate' }
+        return res.send(result);
+      }
+      const result = await questionCollection.insertOne(question);//----------------------------------------------------------------------------------------------
       res.send(result);
     });
     ///----------------------------------------------------------------------applied live exam list
@@ -186,44 +192,67 @@ async function run() {
 
     app.get("/questionPaper", async (req, res) => {
 
-      const instructor_email=req.query.instructor_email
+      const instructor_email = req.query.instructor_email
       const type = req.query.type;
       const subject = req.query.subject;
-      console.log(instructor_email,'-------------line 160')
-      const query0={email:instructor_email}
+      console.log(instructor_email, '-------------line 160')
+      const query0 = { email: instructor_email }
       const result1 = await userCollection.findOne(query0)
-      
-      if(result1?.role=='instructor'){
-        const query = {email:instructor_email,type:type,subjectName:subject};
+
+      const stu_Batch=req.query.batch
+      if(stu_Batch){
+        const query={batch:stu_Batch, subjectName: subject, type: type}
         const result = await questionCollection.find(query).toArray()
-       return res.send(result);
+        return res.send(result);
       }
-      else{
+
+
+      if (result1?.role == 'instructor') {
+        const query = { email: instructor_email, type: type, subjectName: subject };
+        const result = await questionCollection.find(query).toArray()
+        return res.send(result);
+      }
+      else {
         console.log('hit-170')
         const query = { subjectName: subject, type: type };
         const allQuestion = await questionCollection.find(query).toArray();
         //console.log(allQuestion,'-------------------------------------173')
-        const query2={
-          stu_email:instructor_email
-          }
-        const examResult=await resultCollection.find(query2).toArray();
+        const query2 = {
+          stu_email: instructor_email
+        }
+        const examResult = await resultCollection.find(query2).toArray();
         console.log(examResult)
-        const response2 = allQuestion.map((question) => console.log(question._id.toString(),'-------------line 175'))
-        const response1 = examResult.map((question) => console.log(question.examID.toString(),'-------------line 176'))
+        const response2 = allQuestion.map((question) => console.log(question._id.toString(), '-------------line 175'))
+        const response1 = examResult.map((question) => console.log(question.examID.toString(), '-------------line 176'))
 
         const response = allQuestion.map((question) => ({
           ...question,
-            isCompleted: examResult.some(
+          isCompleted: examResult.some(
             (result) =>
-             result.examID === question._id.toString()
-            )
+              result.examID === question._id.toString()
+          )
             ? true
             : false,
         }))
         console.log(response)
         res.send(response)
       }
-  
+
+    });
+
+
+    app.get("/questionCode", async (req, res) => {
+      const code = req.query.code;
+      console.log(code)
+      const query = { exam_code: code };
+      const result = await questionCollection.findOne(query);
+      console.log(result, '---------------------242')
+      if (result) {
+        res.send({ result: true });
+      }
+      else {
+        res.send({ result: false });
+      }
     });
     app.get("/questionPaper/:id", async (req, res) => {
       const id = req.params.id;
@@ -236,8 +265,8 @@ async function run() {
     app.get("/result", async (req, res) => {
       //// need to work here
       const id = req.query.examId;
-      console.log(id,'----207');
-      const query={examID:id}
+      console.log(id, '----207');
+      const query = { examID: id }
       const result = await resultCollection.find(query).toArray()
       res.send(result)
     });
@@ -261,6 +290,13 @@ async function run() {
         const result = await userCollection.find().toArray();
         return res.send(result);
       }
+    });
+
+    app.get("/userBatch", async (req, res) => {
+      const email = req.query.email
+      const query = { email: email }
+      const result = await userCollection.findOne(query)
+      return res.send(result);
     });
 
     //post user in database
@@ -535,7 +571,7 @@ async function run() {
       }
       const result = await liveExamQuestionCollection.findOne(query)
       console.log(result)
-      res.send({ code: result.secretCode })
+      res.send({ code: result?.secretCode })
 
     })
 
@@ -611,7 +647,7 @@ async function run() {
     app.patch("/forumPost/:id", async (req, res) => {
       const commentId = req.params.id; // Get comment ID from the URL
       const updatedComment = req.body; // Get the updated comment data from the request body
-    
+
       const filterCommentId = { _id: new ObjectId(commentId) };
       const updateStatus = {
         $set: {
@@ -629,7 +665,7 @@ async function run() {
         res.status(500).json({ error: "Internal server error" });
       }
     });
-    
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log(
