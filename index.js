@@ -144,9 +144,23 @@ async function run() {
       res.send({ token });
     });
 
-    app.get("/allSubjects", verifyJWT, async (req, res) => {
+    app.get("/allSubjects", verifyJWT, async (req, res) => {  //////////////////todo duplicate allsubject & subjects same work
       const result = await subjectCollection.find().toArray();
       res.send(result);
+    });
+
+    app.post("/allsubjects", async (req, res) => {
+      const data = req.body
+      const query = { subject_code: data.subject_code, subject_name: data.subject_name }
+      const existingSubject = await subjectCollection.findOne(query);
+
+      if (existingSubject) {
+        console.log('hit line 413')
+        return res.send({ msg: "Allredy Created" });
+      }
+      const result = await subjectCollection.insertOne(data)
+      res.send(result);
+      console.log(data, '--------------------------410')
     });
 
     app.post("/questionPaper", async (req, res) => {
@@ -182,11 +196,33 @@ async function run() {
       }
     });
 
+
+
+
     app.get('/appliedLiveExam', async (req, res) => {
       const email = req.query.studentEmail
-      const query = { student_email: email }
-      const result = await applyedLiveExamCollection.find(query).toArray();
-      res.send(result);
+      if (email) {
+        const query = { student_email: email }
+        const result = await applyedLiveExamCollection.find(query).toArray();
+        res.send(result);
+      }
+
+      const examId = req.query.examID
+      if (examId) {
+        console.log(examId,'------------------------219')
+        const query = { examID: examId }
+        const result = await applyedLiveExamCollection.find(query).toArray();
+        return res.send(result);
+      }
+
+      const instructor_email = req.query.instructor_email
+      if (instructor_email) {
+        console.log(instructor_email,'------------------------219')
+        const query = { _id: new ObjectId(examId), instuctor_email: instructor_email }
+        const result = await applyedLiveExamCollection.find(query).toArray();
+        return res.send(result);
+      }
+
     })
 
 
@@ -199,12 +235,13 @@ async function run() {
       const query0 = { email: instructor_email }
       const result1 = await userCollection.findOne(query0)
 
-      const stu_Batch=req.query.batch
-      if(stu_Batch){
-        const query={batch:stu_Batch, subjectName: subject, type: type}
-        const result = await questionCollection.find(query).toArray()
-        return res.send(result);
-      }
+      const stu_Batch = req.query.batch
+      // if(stu_Batch){
+      //   const query={batch:stu_Batch, subjectName: subject, type: type}
+      //   const result = await questionCollection.find(query).toArray()
+      //   return res.send(result);
+      // }
+
 
 
       if (result1?.role == 'instructor') {
@@ -212,9 +249,16 @@ async function run() {
         const result = await questionCollection.find(query).toArray()
         return res.send(result);
       }
+      else if (result1?.role == 'admin') {
+
+        console.log('hiiiiiiiiiiiiiiiiiiiiiiiiiiit')
+        const query = { type: type, subjectName: subject };
+        const result = await questionCollection.find(query).toArray()
+        return res.send(result);
+      }
       else {
         console.log('hit-170')
-        const query = { subjectName: subject, type: type };
+        const query = { subjectName: subject, type: type, batch: stu_Batch };
         const allQuestion = await questionCollection.find(query).toArray();
         //console.log(allQuestion,'-------------------------------------173')
         const query2 = {
@@ -234,7 +278,7 @@ async function run() {
             ? true
             : false,
         }))
-        console.log(response)
+        console.log(response, '.......................................237')
         res.send(response)
       }
 
@@ -397,6 +441,7 @@ async function run() {
       const result = await subjectsCollection.find().toArray();
       res.send(result);
     });
+
 
     app.get("/testimonials", async (req, res) => {
       const result = await testimonialCollection.find().toArray();
