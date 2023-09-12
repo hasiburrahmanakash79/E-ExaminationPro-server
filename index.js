@@ -6,7 +6,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.PAYMENT_SECRETE_KEY);
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 4000;
 
 // Middleware
 const corsConfig = {
@@ -32,7 +32,6 @@ const client = new MongoClient(uri, {
 });
 
 /////////////JWT verify///////////
-
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
   if (!authorization) {
@@ -40,7 +39,6 @@ const verifyJWT = (req, res, next) => {
   }
   //bearer token
   const token = authorization.split(" ")[1];
-
   jwt.verify(token, process.env.SECRETE_TOKEN, (err, decoded) => {
     if (err) {
       return res.status(401).send({ error: true, message: "unauthorized access" });
@@ -95,28 +93,16 @@ async function run() {
     const paymentHistory = client
       .db("E-ExaminationPro")
       .collection("paymentHistory");
-
     const noticeCollection = client.db("E-ExaminationPro").collection("notices");
     const appliedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
     const liveExamQuestionCollection = client.db("E-ExaminationPro").collection("liveExamQuestions");
     const resultCollection = client.db("E-ExaminationPro").collection("result_Collection");
     const blogsCollection = client.db("E-ExaminationPro").collection("blogs");
-
-    //---------------- bijoy
-
     const commentCollection = client
       .db("E-ExaminationPro")
       .collection("comments");
 
     app.post("/comments", async (req, res) => {
-      // const comment = req.body;
-      // if (comment) {
-      //   commentCollection.push(comment);
-      //   res.status(201).json({ message: 'Comment added successfully' });
-      // } else {
-      //   res.status(400).json({ message: 'Invalid comment data' });
-      // }
-
       const comment = req.body;
       console.log(comment);
       const result = await commentCollection.insertOne(comment);
@@ -128,12 +114,9 @@ async function run() {
       res.send(result)
     })
 
-
-
     const forumCollection = client
       .db("E-ExaminationPro")
       .collection("forumCommunity")
-
       const pricingCollection = client.db("E-ExaminationPro").collection("packagePricing");
 
     ///// JWT /////
@@ -152,12 +135,33 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/allsubjects", async (req, res) => {
+      const data = req.body
+      const query = { subject_code: data.subject_code, subject_name: data.subject_name }
+      const existingSubject = await subjectCollection.findOne(query);
+
+      if (existingSubject) {
+        console.log('hit line 413')
+        return res.send({ msg: "Allredy Created" });
+      }
+      const result = await subjectCollection.insertOne(data)
+      res.send(result);
+      console.log(data, '--------------------------410')
+    });
+
     app.post("/questionPaper", async (req, res) => {
       const question = req.body;
       console.log(question);
+      const query = { exam_code: question.exam_code }
+      const existingUser = await questionCollection.findOne(query);
+      if (existingUser) {
+        const result = { code: 'duplicate' }
+        return res.send(result);
+      }
       const result = await questionCollection.insertOne(question);
       res.send(result);
     });
+
     ///----------------------------------------------------------------------applied live exam list
     app.post("/appliedLiveExam", async (req, res) => {
       const info = req.body;
@@ -179,55 +183,93 @@ async function run() {
       }
     });
 
-    app.get('/appliedLiveExam',async(req,res)=>{
-      const email=req.query.studentEmail
-      const query={student_email:email}
-      const result = await appliedLiveExamCollection.find(query).toArray();
-      res.send(result);
+    app.get('/appliedLiveExam', async (req, res) => {
+      const email = req.query.studentEmail
+      if (email) {
+        const query = { student_email: email }
+        const result = await applyedLiveExamCollection.find(query).toArray();
+        res.send(result);
+      }
+      const examId = req.query.examID
+      if (examId) {
+        console.log(examId,'------------------------219')
+        const query = { examID: examId }
+        const result = await applyedLiveExamCollection.find(query).toArray();
+        return res.send(result);
+      }
+
+      const instructor_email = req.query.instructor_email
+      if (instructor_email) {
+        console.log(instructor_email,'------------------------219')
+        const query = { _id: new ObjectId(examId), instuctor_email: instructor_email }
+        const result = await applyedLiveExamCollection.find(query).toArray();
+        return res.send(result);
+      }
+
     })
 
-
     app.get("/questionPaper", async (req, res) => {
-
-      const instructor_email=req.query.instructor_email
+      const instructor_email = req.query.instructor_email
       const type = req.query.type;
       const subject = req.query.subject;
-      console.log(instructor_email,'-------------line 160')
-      const query0={email:instructor_email}
+      console.log(instructor_email, '-------------line 160')
+      const query0 = { email: instructor_email }
       const result1 = await userCollection.findOne(query0)
-      
-      if(result1?.role=='instructor'){
-        const query = {email:instructor_email,type:type,subjectName:subject};
+
+      const stu_Batch = req.query.batch
+
+      if (result1?.role == 'instructor') {
+        const query = { email: instructor_email, type: type, subjectName: subject };
         const result = await questionCollection.find(query).toArray()
-       return res.send(result);
+        return res.send(result);
       }
-      else{
+      else if (result1?.role == 'admin') {
+        const query = { type: type, subjectName: subject };
+        const result = await questionCollection.find(query).toArray()
+        return res.send(result);
+      }
+      else {
         console.log('hit-170')
-        const query = { subjectName: subject, type: type };
+        const query = { subjectName: subject, type: type, batch: stu_Batch };
         const allQuestion = await questionCollection.find(query).toArray();
         //console.log(allQuestion,'-------------------------------------173')
-        const query2={
-          stu_email:instructor_email
-          }
-        const examResult=await resultCollection.find(query2).toArray();
+        const query2 = {
+          stu_email: instructor_email
+        }
+        const examResult = await resultCollection.find(query2).toArray();
         console.log(examResult)
-        const response2 = allQuestion.map((question) => console.log(question._id.toString(),'-------------line 175'))
-        const response1 = examResult.map((question) => console.log(question.examID.toString(),'-------------line 176'))
+        const response2 = allQuestion.map((question) => console.log(question._id.toString(), '-------------line 175'))
+        const response1 = examResult.map((question) => console.log(question.examID.toString(), '-------------line 176'))
 
         const response = allQuestion.map((question) => ({
           ...question,
-            isCompleted: examResult.some(
+          isCompleted: examResult.some(
             (result) =>
-             result.examID === question._id.toString()
-            )
+              result.examID === question._id.toString()
+          )
             ? true
             : false,
         }))
-        console.log(response)
+        console.log(response, '.......................................237')
         res.send(response)
       }
-  
+
     });
+
+    app.get("/questionCode", async (req, res) => {
+      const code = req.query.code;
+      console.log(code)
+      const query = { exam_code: code };
+      const result = await questionCollection.findOne(query);
+      console.log(result, '---------------------242')
+      if (result) {
+        res.send({ result: true });
+      }
+      else {
+        res.send({ result: false });
+      }
+    });
+
     app.get("/questionPaper/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -239,8 +281,8 @@ async function run() {
     app.get("/result", async (req, res) => {
       //// need to work here
       const id = req.query.examId;
-      console.log(id,'----207');
-      const query={examID:id}
+      console.log(id, '----207');
+      const query = { examID: id }
       const result = await resultCollection.find(query).toArray()
       res.send(result)
     });
@@ -250,7 +292,6 @@ async function run() {
       res.send(result);
       console.log(data);
     });
-    ///////////////////////////////////
 
     ////////////////User Get,///////////////////--------------------------------------------abir
     app.get("/users", async (req, res) => {
@@ -264,6 +305,13 @@ async function run() {
         const result = await userCollection.find().toArray();
         return res.send(result);
       }
+    });
+
+    app.get("/userBatch", async (req, res) => {
+      const email = req.query.email
+      const query = { email: email }
+      const result = await userCollection.findOne(query)
+      return res.send(result);
     });
 
     //post user in database
@@ -286,7 +334,6 @@ async function run() {
       res.send(result)
     });
 
-
     //////////////updatePRofile////// ----------------------------------------new abir
     app.patch("/updateProfile", async (req, res) => {
       const email = req.query.email;
@@ -307,7 +354,6 @@ async function run() {
     });
 
     //get user info ------------------------------------------------------new abir
-
     app.get("/user", async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
@@ -433,6 +479,7 @@ async function run() {
       const result = await shortQuestionCollection.deleteOne(query);
       res.send(result);
     });
+
     /**=========================
      * Long question api's
      * ====================
@@ -480,32 +527,30 @@ async function run() {
       res.send(result);
     });
 
-
     ////////////////// Notice ////////////////////----------HR
     app.post('/notice', async (req, res) => {
       const noticeInfo = req.body;
       const result = await noticeCollection.insertOne(noticeInfo)
       res.send(result)
     })
+
     //---------------------------------------------------------------------------also abir
     app.get("/notice", async (req, res) => {
-      const selectedID=req.query.selectedID
-      console.log(selectedID,'hit-----')
-      if(selectedID )  {
-        const query4={_id:new ObjectId(selectedID)}
+      const selectedID = req.query.selectedID
+      console.log(selectedID, 'hit-----')
+      if (selectedID) {
+        const query4 = { _id: new ObjectId(selectedID) }
         const result = await noticeCollection.findOne(query4)
         return res.send(result)
       }
-
-      const instructorEmail=req.query.instructor
-      query0={email:instructorEmail}
+      const instructorEmail = req.query.instructor
+      query0 = { email: instructorEmail }
       result = await userCollection.findOne(query0)
       console.log(result)
-      if(result?.role=='instructor'){
+      if (result?.role == 'instructor') {
         const result = await noticeCollection.find(query0).toArray()
         return res.send(result)
       }
-
       const exam_id = req.query.id
       const student_email = req.query.student_email
       if (exam_id) {
@@ -516,13 +561,12 @@ async function run() {
             { examID: exam_id }
           ]
         }
-        const existingUser = await appliedLiveExamCollection.findOne(query1);
-        console.log(existingUser,'line 412',exam_id,student_email)
+        const existingUser = await applyedLiveExamCollection.findOne(query1);
+        console.log(existingUser, 'line 412', exam_id, student_email)
         if (existingUser) {
           console.log('hit line 413')
-          return res.send({ msg: "Allredy Applied" });
+          return res.send({ msg: "AllReady Applied" });
         }
-
         const query2 = { _id: new ObjectId(exam_id) }
         const result = await noticeCollection.findOne(query2)
         return res.send(result)
@@ -531,35 +575,29 @@ async function run() {
         const result = await noticeCollection.find().toArray()
         return res.send(result)
       }
-
     })
-
 
     /////////////////live exam QUes////////////////////
-    app.get('/liveQuestionPaper',async(req,res)=>{
-      const id=req.query.id
-      const examCode=req.query.examCode
+    app.get('/liveQuestionPaper', async (req, res) => {
+      const id = req.query.id
+      const examCode = req.query.examCode
       const query = {
         $and: [
-          {examID: id },
-          {examCode: examCode }
+          { examID: id },
+          { examCode: examCode }
         ]
       }
-      const result=await liveExamQuestionCollection.findOne(query)
+      const result = await liveExamQuestionCollection.findOne(query)
       console.log(result)
-      res.send({code:result.secretCode})
-        
+      res.send({ code: result?.secretCode })
     })
 
-    app.post('/liveQuestionPaper',async(req,res)=>{
-      const data=req.body
+    app.post('/liveQuestionPaper', async (req, res) => {
+      const data = req.body
       console.log(data)
-      const result=await liveExamQuestionCollection.insertOne(data)
+      const result = await liveExamQuestionCollection.insertOne(data)
       res.send(result)
     })
-
-
-
 
     // Pricing 
     app.get("/price", async(req, res) => {
@@ -626,16 +664,26 @@ async function run() {
       const result = await forumCollection.find().toArray()
       res.send(result)
     })
-    app.patch("/forumPost", async (req, res) => {
-      const comment = req.body;
-      const filterUserId = { _id: new ObjectId(id) };
+    app.patch("/forumPost/:id", async (req, res) => {
+      const commentId = req.params.id; // Get comment ID from the URL
+      const updatedComment = req.body; // Get the updated comment data from the request body
+
+      const filterCommentId = { _id: new ObjectId(commentId) };
       const updateStatus = {
         $set: {
-          article: comment.article,
+          article: updatedComment.article,
         },
       };
-      const result = await forumCollection.updateOne(filterUserId, updateStatus);
-      res.send(result);
+      try {
+        const result = await forumCollection.updateOne(filterCommentId, updateStatus);
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ error: "Comment not found" });
+        }
+        res.status(200).json({ message: "Comment updated successfully" });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+      }
     });
 
     // Send a ping to confirm a successful connection
