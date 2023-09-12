@@ -6,7 +6,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.PAYMENT_SECRETE_KEY);
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 4000;
 
 // Middleware
 const corsConfig = {
@@ -109,7 +109,7 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("comments");
 
-    //---------showing comments
+    //---------showing comments---------------------------------------------------------------------------COMMENT--------------------------
     app.post("/comments", async (req, res) => {
       // const comment = req.body;
       // if (comment) {
@@ -120,16 +120,19 @@ async function run() {
       // }
 
       const comment = req.body;
-      console.log(comment);
+      console.log(comment,'.................................123');
       const result = await commentCollection.insertOne(comment);
       res.send(result);
     })
 
     app.get('/comments', async (req, res) => {
-      const blogId = req.body;
-      const query = { blogId: blogId }
-      const result = await commentCollection.findOne(query);
-      res.send(result)
+      const blogId = req.query.id;
+      const userEmail=req.query.userEmail
+      const query_0 = { BlogId:blogId}
+      const query_1 = { BlogId:blogId,userEmail:userEmail}
+      const allUserComments = await commentCollection.find(query_0).toArray()
+      const userComments = await commentCollection.find(query_1).toArray();
+      res.send({allUserComments,userComments})
     })
 
 
@@ -152,6 +155,15 @@ async function run() {
     app.get("/blogs", async (req, res) => {
       const cursor = blogsCollection.find();
       const result = await cursor.toArray();
+      res.send(result)
+    })
+    app.get("/blogs/:id", async (req, res) => {
+
+      const id = req.params.id
+      console.log(id,'---------------------------------------160')
+      const query = {_id:new ObjectId(id)}
+      // const cursor = blogsCollection.find();
+      const result = await blogsCollection.findOne(query);
       res.send(result)
     })
 
