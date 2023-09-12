@@ -97,7 +97,7 @@ async function run() {
       .collection("paymentHistory");
 
     const noticeCollection = client.db("E-ExaminationPro").collection("notices");
-    const applyedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
+    const appliedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
     const liveExamQuestionCollection = client.db("E-ExaminationPro").collection("liveExamQuestions");
     const resultCollection = client.db("E-ExaminationPro").collection("result_Collection");
 
@@ -135,12 +135,12 @@ async function run() {
           { examID: exam_id }
         ]
       }
-      const existingUser = await applyedLiveExamCollection.findOne(query);
+      const existingUser = await appliedLiveExamCollection.findOne(query);
       if (existingUser) {
-        return res.send({ msg: "Allredy Applied" });
+        return res.send({ msg: "Already Applied" });
       }
       else {
-        const result = await applyedLiveExamCollection.insertOne(info);
+        const result = await appliedLiveExamCollection.insertOne(info);
         res.send(result);
       }
     });
@@ -148,7 +148,7 @@ async function run() {
     app.get('/appliedLiveExam', async (req, res) => {
       const email = req.query.studentEmail
       const query = { student_email: email }
-      const result = await applyedLiveExamCollection.find(query).toArray();
+      const result = await appliedLiveExamCollection.find(query).toArray();
       res.send(result);
     })
 
@@ -203,9 +203,10 @@ async function run() {
 
     ///// post get result ----------------------------------------new Abir result
     app.get("/result", async (req, res) => {
-      const id = req.query.id;
-      console.log('int id', id);
-      const query = { examID: id }
+      const examId = req.query.examId;
+      console.log('int id', examId);
+      const query = { examID: examId }
+      // const result = await resultCollection.find().toArray()
       const result = await resultCollection.findOne(query)
       res.send(result)
     });
@@ -472,11 +473,11 @@ async function run() {
             { examID: exam_id }
           ]
         }
-        const existingUser = await applyedLiveExamCollection.findOne(query1);
+        const existingUser = await appliedLiveExamCollection.findOne(query1);
         console.log(existingUser, 'line 412', exam_id, student_email)
         if (existingUser) {
           console.log('hit line 413')
-          return res.send({ msg: "Allredy Applied" });
+          return res.send({ msg: "Already Applied" });
         }
 
         const query2 = { _id: new ObjectId(exam_id) }
