@@ -102,15 +102,52 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("comments");
 
+    //---------showing comments---------------------------------------------------------------------------COMMENT--------------------------
     app.post("/comments", async (req, res) => {
       const comment = req.body;
-      console.log(comment);
+      console.log(comment,'.................................123');
       const result = await commentCollection.insertOne(comment);
       res.send(result);
     })
 
     app.get('/comments', async (req, res) => {
-      const result = await commentCollection.find().toArray();
+      const blogId = req.query.id;
+      const userEmail=req.query.userEmail
+      const query_0 = { BlogId:blogId}
+      const query_1 = { BlogId:blogId,userEmail:userEmail}
+      const allUserComments = await commentCollection.find(query_0).toArray()
+      const userComments = await commentCollection.find(query_1).toArray();
+      res.send({allUserComments,userComments})
+    })
+
+
+    // app.get('/comments/:id', async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: new ObjectId(id) };
+    //   const result = await commentCollection.findOne(query).toArray();
+    //   res.send(result)
+    // })
+
+
+    //------------for adding blogs by instructor
+    app.post('/blogs', async (req, res) => {
+      const addedBlog = req.body;
+      console.log(addedBlog);
+      const result = await blogsCollection.insertOne(addedBlog);
+      res.send(result)
+    })
+
+    app.get("/blogs", async (req, res) => {
+      const cursor = blogsCollection.find();
+      const result = await cursor.toArray();
+      res.send(result)
+    })
+    app.get("/blogs/:id", async (req, res) => {
+      const id = req.params.id
+      console.log(id,'---------------------------------------160')
+      const query = {_id:new ObjectId(id)}
+      // const cursor = blogsCollection.find();
+      const result = await blogsCollection.findOne(query);
       res.send(result)
     })
 
@@ -161,7 +198,6 @@ async function run() {
       const result = await questionCollection.insertOne(question);
       res.send(result);
     });
-
     ///----------------------------------------------------------------------applied live exam list
     app.post("/appliedLiveExam", async (req, res) => {
       const info = req.body;
@@ -533,7 +569,6 @@ async function run() {
       const result = await noticeCollection.insertOne(noticeInfo)
       res.send(result)
     })
-
     //---------------------------------------------------------------------------also abir
     app.get("/notice", async (req, res) => {
       const selectedID = req.query.selectedID
