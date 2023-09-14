@@ -292,6 +292,15 @@ async function run() {
       res.send(result);
       console.log(data);
     });
+    //---------------------------------------------------------------------------------get user exam data
+    app.get("/userGivenExam/:email", async (req, res) => {
+      const email=req.params.email
+      const query={stu_email:email}
+      const result=await resultCollection.find(query).sort({_id: -1 }).toArray()
+      res.send(result);
+      console.log(email,'-----------------------------------------------line 298')
+    });
+
 
     ////////////////User Get,///////////////////--------------------------------------------abir
     app.get("/users", async (req, res) => {
@@ -421,7 +430,13 @@ async function run() {
     });
 
     app.get("/testimonials", async (req, res) => {
-      const result = await testimonialCollection.find().toArray();
+      const result = await testimonialCollection.find().sort({_id:-1}).limit(10).toArray();
+      res.send(result);
+    });
+
+    app.post("/testimonials", async (req, res) => {
+      const data=req.body
+      const result = await testimonialCollection.insertOne(data);
       res.send(result);
     });
 
