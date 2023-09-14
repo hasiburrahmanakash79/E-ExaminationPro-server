@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const SSLCommerzPayment = require('sslcommerz-lts')
 const axios = require("axios");
 const cors = require("cors");
 require("dotenv").config();
@@ -49,6 +50,10 @@ const verifyJWT = (req, res, next) => {
     next();
   });
 };
+
+const store_id = process.env.STORE_ID;
+const store_passwd = process.env.STORE_PASS
+const is_live = false //true for live, false for sandbox
 
 async function run() {
   try {
@@ -100,6 +105,7 @@ async function run() {
     const applyedLiveExamCollection = client.db("E-ExaminationPro").collection("appliedLiveExam");
     const liveExamQuestionCollection = client.db("E-ExaminationPro").collection("liveExamQuestions");
     const resultCollection = client.db("E-ExaminationPro").collection("result_Collection");
+    const sslCommerzCollection = client.db("E-ExaminationPro").collection("sslCommerz");
 
     //---------------- bijoy
 
@@ -186,44 +192,44 @@ async function run() {
 
     app.get("/questionPaper", async (req, res) => {
 
-      const instructor_email=req.query.instructor_email
+      const instructor_email = req.query.instructor_email
       const type = req.query.type;
       const subject = req.query.subject;
-      console.log(instructor_email,'-------------line 160')
-      const query0={email:instructor_email}
+      console.log(instructor_email, '-------------line 160')
+      const query0 = { email: instructor_email }
       const result1 = await userCollection.findOne(query0)
-      
-      if(result1?.role=='instructor'){
-        const query = {email:instructor_email,type:type,subjectName:subject};
+
+      if (result1?.role == 'instructor') {
+        const query = { email: instructor_email, type: type, subjectName: subject };
         const result = await questionCollection.find(query).toArray()
-       return res.send(result);
+        return res.send(result);
       }
-      else{
+      else {
         console.log('hit-170')
         const query = { subjectName: subject, type: type };
         const allQuestion = await questionCollection.find(query).toArray();
         //console.log(allQuestion,'-------------------------------------173')
-        const query2={
-          stu_email:instructor_email
-          }
-        const examResult=await resultCollection.find(query2).toArray();
+        const query2 = {
+          stu_email: instructor_email
+        }
+        const examResult = await resultCollection.find(query2).toArray();
         console.log(examResult)
-        const response2 = allQuestion.map((question) => console.log(question._id.toString(),'-------------line 175'))
-        const response1 = examResult.map((question) => console.log(question.examID.toString(),'-------------line 176'))
+        const response2 = allQuestion.map((question) => console.log(question._id.toString(), '-------------line 175'))
+        const response1 = examResult.map((question) => console.log(question.examID.toString(), '-------------line 176'))
 
         const response = allQuestion.map((question) => ({
           ...question,
-            isCompleted: examResult.some(
+          isCompleted: examResult.some(
             (result) =>
-             result.examID === question._id.toString()
-            )
+              result.examID === question._id.toString()
+          )
             ? true
             : false,
         }))
         console.log(response)
         res.send(response)
       }
-  
+
     });
     app.get("/questionPaper/:id", async (req, res) => {
       const id = req.params.id;
@@ -236,8 +242,8 @@ async function run() {
     app.get("/result", async (req, res) => {
       //// need to work here
       const id = req.query.examId;
-      console.log(id,'----207');
-      const query={examID:id}
+      console.log(id, '----207');
+      const query = { examID: id }
       const result = await resultCollection.find(query).toArray()
       res.send(result)
     });
@@ -598,6 +604,89 @@ async function run() {
       }
     });
 
+    /* SSLCommerz Payment api  */
+    const transition_id = new ObjectId().toString();
+    app.post("/sslPayment", async (req, res) => {
+      // const orderProduct = await paymentCollection.findOne({
+      //   _id: new ObjectId(req.body.id)
+      // });
+      const productInfo = req.body;
+      // console.log(productInfo);
+      const data = {
+        total_amount: productInfo?.postCode,
+        currency: productInfo?.currency,
+        tran_id: transition_id, // use unique tran_id for each api call
+        success_url: `http://localhost:5000/paymentOrder/success/${transition_id}`,
+        fail_url: `http://localhost:5000/paymentOrder/fail/${transition_id}`,
+        cancel_url: 'http://localhost:3030/cancel',
+        ipn_url: 'http://localhost:3030/ipn',
+        shipping_method: 'Courier',
+        product_name: productInfo?.paymentName,
+        product_category: 'Electronic',
+        product_profile: 'general',
+        cus_name: productInfo?.name,
+        cus_email: productInfo?.email,
+        cus_add1: productInfo?.address,
+        cus_add2: 'Dhaka',
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
+        cus_postcode: productInfo?.postCode,
+        cus_country: 'Bangladesh',
+        cus_phone: productInfo?.phone,
+        cus_fax: '01711111111',
+        ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
+        ship_postcode: 1000,
+        ship_country: 'Bangladesh',
+      };
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+      sslcz.init(data).then(apiResponse => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL
+        res.send({ url: GatewayPageURL });
+
+        const confirmOrder = {
+          productInfo,
+          confirmStatus: false,
+          transitionId: transition_id
+        };
+        const result = sslCommerzCollection.insertOne(confirmOrder);
+
+
+        // console.log('Redirecting to: ', GatewayPageURL)
+      });
+
+      app.post("/paymentOrder/success/:tranId", async (req, res) => {
+        const transId = req.params.tranId;
+        const result = await sslCommerzCollection.updateOne(
+          { transitionId: transId },
+          {
+            $set: {
+              confirmStatus: true
+            }
+          }
+        )
+        if (result.modifiedCount > 0) {
+          res.redirect(`http://localhost:5173/paymentOrder/success/${transId}`)
+        }
+        // console.log("655", transId);
+      })
+
+      app.post("/paymentOrder/fail/:tranId", async (req, res) => {
+        const transId = req.params.tranId;
+        const result = await sslCommerzCollection.deleteOne({ transitionId: transId });
+        if (result.deletedCount) {
+          res.redirect(`http://localhost:5173/paymentOrder/fail/${transId}`)
+        }
+      })
+
+    })
+
+
+
     /* forum communication */
     app.post("/forumPost", async (req, res) => {
       const forum = req.body;
@@ -605,31 +694,52 @@ async function run() {
       res.send(result)
     })
     app.get("/forumPost", async (req, res) => {
-      const result = await forumCollection.find().toArray()
+      const result = await forumCollection.find().sort({ _id: -1 }).toArray()
       res.send(result)
     })
+
     app.patch("/forumPost/:id", async (req, res) => {
-      const commentId = req.params.id; // Get comment ID from the URL
-      const updatedComment = req.body; // Get the updated comment data from the request body
-    
+      const commentId = req.params.id;
+      const updatedComment = req.body;
       const filterCommentId = { _id: new ObjectId(commentId) };
       const updateStatus = {
         $set: {
           article: updatedComment.article,
         },
       };
-      try {
-        const result = await forumCollection.updateOne(filterCommentId, updateStatus);
-        if (result.matchedCount === 0) {
-          return res.status(404).json({ error: "Comment not found" });
-        }
-        res.status(200).json({ message: "Comment updated successfully" });
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal server error" });
-      }
+      const result = await forumCollection.updateOne(filterCommentId, updateStatus);
+      res.send(result)
     });
-    
+
+    app.post('/forumPost/:postId/replies', async (req, res) => {
+      const { postId } = req.params;
+      const { text, author } = req.body;
+      try {
+        const newReply = { text, author };
+        const result = await forumCollection.updateOne(
+          { _id: new ObjectId(postId) },
+          { $push: { replies: newReply } }
+        );
+        if (result.modifiedCount === 1) {
+          return res.status(200).json({ message: 'Reply added successfully' });
+        } else {
+          return res.status(404).json({ message: 'Post not found' });
+        }
+      }
+      catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Internal server error' });
+      } finally {
+      }
+    })
+
+    app.delete("/forumPost/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await forumCollection.deleteOne(query);
+      res.send(result)
+    })
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log(
