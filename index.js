@@ -129,6 +129,8 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("packagePricing");
 
+      const sslCommerzCollection = client.db("E-ExaminationPro").collection("sslCommerz")
+
     //---------showing comments---------------------------------------------------------------------------COMMENT--------------------------
     app.post("/comments", async (req, res) => {
       const comment = req.body;
@@ -343,7 +345,7 @@ async function run() {
       console.log("int id", examId);
       const query = { examID: examId };
       // const result = await resultCollection.find().toArray()
-      const result = await resultCollection.findOne(query);
+      const result = await resultCollection.find(query).toArray();
       res.send(result);
     });
     app.post("/examdata", async (req, res) => {
@@ -675,8 +677,22 @@ async function run() {
 
     // Pricing
     app.get("/price", async (req, res) => {
-      const price = await pricingCollection.find().toArray();
-      res.send(price);
+
+      const id = req.query.id
+
+      console.log(id, '-----------------------------------------------------681')
+
+      if (id) {
+        const query = { _id: new ObjectId(id) }
+        const price = await pricingCollection.findOne(query)
+        console.log(price,'.............................................686')
+        return res.send(price);
+      }
+      else {
+
+        const price = await pricingCollection.find().toArray();
+        res.send(price);
+      }
     });
 
     // payment system
@@ -728,10 +744,10 @@ async function run() {
       }
     });
 
-    
+
     // STORE_ID = "abc65019fe81c973"
     // STORE_PASS = "abc65019fe81c973@ssl"
-    
+
     /* SSLCommerz Payment api  */
     const transition_id = new ObjectId().toString();
     app.post("/sslPayment", async (req, res) => {
@@ -781,7 +797,7 @@ async function run() {
           confirmStatus: false,
           transitionId: transition_id,
         };
-        const result = sslCommerzCollection.insertOne(confirmOrder);
+        const result = sslCommerzCollection.insertOne(confirmOrder); //-------------------------------------------------------todo
       });
 
       app.post("/paymentOrder/success/:tranId", async (req, res) => {
