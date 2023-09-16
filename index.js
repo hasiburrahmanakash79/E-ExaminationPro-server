@@ -114,19 +114,19 @@ async function run() {
     //---------showing comments---------------------------------------------------------------------------COMMENT--------------------------
     app.post("/comments", async (req, res) => {
       const comment = req.body;
-      console.log(comment,'.................................123');
+      console.log(comment, '.................................123');
       const result = await commentCollection.insertOne(comment);
       res.send(result);
     })
 
     app.get('/comments', async (req, res) => {
       const blogId = req.query.id;
-      const userEmail=req.query.userEmail
-      const query_0 = { BlogId:blogId}
-      const query_1 = { BlogId:blogId,userEmail:userEmail}
+      const userEmail = req.query.userEmail
+      const query_0 = { BlogId: blogId }
+      const query_1 = { BlogId: blogId, userEmail: userEmail }
       const allUserComments = await commentCollection.find(query_0).toArray()
       const userComments = await commentCollection.find(query_1).toArray();
-      res.send({allUserComments,userComments})
+      res.send({ allUserComments, userComments })
     })
 
 
@@ -153,8 +153,8 @@ async function run() {
     })
     app.get("/blogs/:id", async (req, res) => {
       const id = req.params.id
-      console.log(id,'---------------------------------------160')
-      const query = {_id:new ObjectId(id)}
+      console.log(id, '---------------------------------------160')
+      const query = { _id: new ObjectId(id) }
       // const cursor = blogsCollection.find();
       const result = await blogsCollection.findOne(query);
       res.send(result)
@@ -710,8 +710,8 @@ async function run() {
         total_amount: productInfo?.postCode,
         currency: productInfo?.currency,
         tran_id: transition_id, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/paymentOrder/success/${transition_id}`,
-        fail_url: `http://localhost:5000/paymentOrder/fail/${transition_id}`,
+        success_url: `http://localhost:4000/paymentOrder/success/${transition_id}`,
+        fail_url: `http://localhost:4000/paymentOrder/fail/${transition_id}`,
         cancel_url: 'http://localhost:3030/cancel',
         ipn_url: 'http://localhost:3030/ipn',
         shipping_method: 'Courier',
@@ -833,6 +833,37 @@ async function run() {
       const result = await forumCollection.deleteOne(query);
       res.send(result)
     })
+
+    app.post('/forumPost/:postId/like', async (req, res) => {
+      const postId = req.params.postId;
+      const userEmail = req.body.email;
+      try {
+        await forumCollection.updateOne(
+          { _id: ObjectId(postId) },
+          { $addToSet: { likes: userEmail } }
+        );
+        const updatedPost = await forumCollection.findOne({ _id: ObjectId(postId) });
+        const likeCount = updatedPost.likes.length;
+        res.status(200).json({ message: 'Post liked successfully', likeCount });
+      } catch (error) {
+        res.status(500).json({ error: 'Unable to like the post' });
+      }
+    });
+    app.post('/forumPost/:postId/unlike', async (req, res) => {
+      const postId = req.params.postId;
+      const userEmail = req.body.email;
+      try {
+        await forumCollection.updateOne(
+          { _id: ObjectId(postId) },
+          { $pull: { likes: userEmail } }
+        );
+        const updatedPost = await forumCollection.findOne({ _id: ObjectId(postId) });
+        const likeCount = updatedPost.likes.length;
+        res.status(200).json({ message: 'Post disliked successfully', likeCount });
+      } catch (error) {
+        res.status(500).json({ error: 'Unable to dislike the post' });
+      }
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
