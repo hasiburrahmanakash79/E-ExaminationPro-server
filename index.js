@@ -63,7 +63,6 @@ async function run() {
     // await client.connect();
 
     // Database collection
-    let tempCollection;
     const userCollection = client.db("E-ExaminationPro").collection("users");
     const shortQuestionCollection = client
       .db("E-ExaminationPro")
