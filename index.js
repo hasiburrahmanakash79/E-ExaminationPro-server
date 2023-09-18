@@ -709,8 +709,8 @@ async function run() {
         total_amount: productInfo?.postCode,
         currency: productInfo?.currency,
         tran_id: transition_id, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/paymentOrder/success/${transition_id}`,
-        fail_url: `http://localhost:5000/paymentOrder/fail/${transition_id}`,
+        success_url: `http://localhost:4000/paymentOrder/success/${transition_id}`,
+        fail_url: `http://localhost:4000/paymentOrder/fail/${transition_id}`,
         cancel_url: "http://localhost:3030/cancel",
         ipn_url: "http://localhost:3030/ipn",
         shipping_method: "Courier",
