@@ -114,9 +114,6 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("result_Collection");
     // const sslCommerzCollection = client.db("E-ExaminationPro").collection("sslCommerz");
-
-    //---------------- bijoy
-
     const blogsCollection = client.db("E-ExaminationPro").collection("blogs");
     const commentCollection = client
       .db("E-ExaminationPro")
