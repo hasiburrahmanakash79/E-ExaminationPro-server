@@ -348,7 +348,7 @@ async function run() {
       // const result = await resultCollection.find().toArray()
       const result = await resultCollection.findOne(query);
       res.send(result);
-   
+
     });
 
     app.get("/allresultBySubject", async (req, res) => {
@@ -365,9 +365,96 @@ async function run() {
 
     app.post("/examdata", async (req, res) => {
       const data = req.body;
+
+      console.log(data);
+      const studentEmail=data.stu_email
+      const examId=data.examID
+
+      const query2={stu_email:studentEmail,examID:examId}
+      const existingUser = await resultCollection.findOne(query2);
+      if (existingUser) {
+        return res.send([]);
+      }
+
+    const seventyPercentMark = (70 / 100) * data.totalMark;
+    const fortyPercentMark = (40 / 100) * data.totalMark;
+
+   
+    const query={email:studentEmail}
+    const userData =await userCollection.findOne(query)
+    
+    if (data.mark >= seventyPercentMark) {
+    //  console.log('70%',seventyPercentMark,studentPercentage,fortyPercentMark,data.mark,data.totalMark)
+
+     if(!userData?.gems){
+      const options = { upsert: true }
+      const doc = {
+        $set: {
+          gems:1,
+        },
+      };
+      const result = await userCollection.updateOne(query, doc, options);
+     }
+     else{
+      const options = { upsert: true }
+      const doc = {
+        $set: {
+          gems:userData.gems+1,
+        },
+      };
+      const result = await userCollection.updateOne(query, doc, options);
+     }
+    } 
+    
+    else if (data.mark >= fortyPercentMark) {
+
+      if(!userData?.gems){
+        const options = { upsert: true }
+        const doc = {
+          $set: {
+            gems:0.5,
+          },
+        };
+        const result = await userCollection.updateOne(query, doc, options);
+       }
+       else{
+        const options = { upsert: true }
+        const doc = {
+          $set: {
+            gems:userData.gems+0.5,
+          },
+        };
+ await userCollection.updateOne(query, doc, options);
+       }
+
+
+    } 
+    else {
+
+      if(!userData?.gems){
+        const options = { upsert: true }
+        const doc = {
+          $set: {
+            gems:0,
+          },
+        };
+ await userCollection.updateOne(query, doc, options);
+       }
+       else{
+        const options = { upsert: true }
+        const doc = {
+          $set: {
+            gems:userData.gems+0,
+          },
+        };
+ await userCollection.updateOne(query, doc, options);
+       }
+
+    }
+
       const result = await resultCollection.insertOne(data);
       res.send(result);
-      //console.log(data);
+
     });
     //---------------------------------------------------------------------------------get user exam data
     app.get("/userGivenExam/:email", async (req, res) => {
