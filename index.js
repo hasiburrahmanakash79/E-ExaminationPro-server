@@ -150,7 +150,6 @@ async function run() {
     //------------for adding blogs by instructor
     app.post("/blogs", async (req, res) => {
       const addedBlog = req.body;
-      //console.log(addedBlog);
       const result = await blogsCollection.insertOne(addedBlog);
       res.send(result);
     });
@@ -169,7 +168,6 @@ async function run() {
 
     ///// JWT /////
     app.post("/jwt", (req, res) => {
-      //console.log('hit jwt 107')
       const userEmail = req.body;
       const token = jwt.sign(userEmail, `${process.env.SECRETE_TOKEN}`, {
         expiresIn: "7d",
@@ -241,7 +239,6 @@ async function run() {
 
       const instructor_email = req.query.instructor_email;
       if (instructor_email) {
-
         const query = {
           _id: new ObjectId(examId),
           instructor_email: instructor_email,
@@ -293,7 +290,6 @@ async function run() {
 
     app.get("/questionCode", async (req, res) => {
       const code = req.query.code;
-
       const query = { exam_code: code };
       const result = await questionCollection.findOne(query);
       if (result) {
@@ -313,16 +309,106 @@ async function run() {
     ///// post get result ----------------------------------------new Abir result
     app.get("/result", async (req, res) => {
       const examId = req.query.examId;
+      const email = req.query.email
+      const query = { examID: examId, stu_email: email };
+      const result = await resultCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.get("/allresultBySubject", async (req, res) => {
+      const examId = req.query.examsID;
       const query = { examID: examId };
       const result = await resultCollection.find(query).toArray();
       res.send(result);
+
     });
+
+
+
+
     app.post("/examdata", async (req, res) => {
       const data = req.body;
+      const studentEmail = data.stu_email
+      const examId = data.examID
+      const query2 = { stu_email: studentEmail, examID: examId }
+      const existingUser = await resultCollection.findOne(query2);
+      if (existingUser) {
+        return res.send([]);
+      }
+
+      const seventyPercentMark = (70 / 100) * data.totalMark;
+      const fortyPercentMark = (40 / 100) * data.totalMark;
+      const query = { email: studentEmail }
+      const userData = await userCollection.findOne(query)
+      if (data.mark >= seventyPercentMark) {
+        if (!userData?.gems) {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: 1,
+            },
+          };
+          const result = await userCollection.updateOne(query, doc, options);
+        }
+        else {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: userData.gems + 1,
+            },
+          };
+          const result = await userCollection.updateOne(query, doc, options);
+        }
+      }
+
+      else if (data.mark >= fortyPercentMark) {
+
+        if (!userData?.gems) {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: 0.5,
+            },
+          };
+          const result = await userCollection.updateOne(query, doc, options);
+        }
+        else {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: userData.gems + 0.5,
+            },
+          };
+          await userCollection.updateOne(query, doc, options);
+        }
+      }
+      else {
+
+        if (!userData?.gems) {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: 0,
+            },
+          };
+          await userCollection.updateOne(query, doc, options);
+        }
+        else {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: userData.gems + 0,
+            },
+          };
+          await userCollection.updateOne(query, doc, options);
+        }
+
+      }
+
       const result = await resultCollection.insertOne(data);
       res.send(result);
-    });
-    //---------------------------------------------------------------------------------get user exam data
+    })
+    // get user exam data
     app.get("/userGivenExam/:email", async (req, res) => {
       const email = req.params.email;
       const query = { stu_email: email };
@@ -331,10 +417,7 @@ async function run() {
         .sort({ _id: -1 })
         .toArray();
       res.send(result);
-      console.log(
-        email,
-        "-----------------------------------------------line 298"
-      );
+
     });
 
     ////////////////User Get,///////////////////--------------------------------------------abir
@@ -409,7 +492,6 @@ async function run() {
     // find Admin from database
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-
       if (req.decoded.email !== email) {
         return res.send({ admin: false });
       }
@@ -511,7 +593,6 @@ async function run() {
     // get short question from database
     app.get("/shortQ", async (req, res) => {
       const subject = req.query.subject;
-      //console.log(subject);
       const query = { subject: subject };
       const result = await shortQuestionCollection.find(query).toArray();
       res.send(result);
@@ -539,7 +620,6 @@ async function run() {
     // get long question from database
     app.get("/longQ", async (req, res) => {
       const subject = req.query.subject;
-      //console.log(subject);
       const query = { subject: subject };
       const result = await longQuestionCollection.find(query).toArray();
       res.send(result);
@@ -588,7 +668,6 @@ async function run() {
     //---------------------------------------------------------------------------also abir
     app.get("/notice", async (req, res) => {
       const selectedID = req.query.selectedID;
-
       if (selectedID) {
         const query4 = { _id: new ObjectId(selectedID) };
         const result = await noticeCollection.findOne(query4);
@@ -609,7 +688,6 @@ async function run() {
         };
         const existingUser = await appliedLiveExamCollection.findOne(query1);
         if (existingUser) {
-          console.log("hit line 413");
           return res.send({ msg: "Already Applied" });
         }
         const query2 = { _id: new ObjectId(exam_id) };
@@ -693,7 +771,6 @@ async function run() {
       try {
         const response = await axios.get("https://zenquotes.io/api/quotes");
         const data = response.data;
-        // //console.log(data);
         res.json(data);
       } catch (error) {
         res.status(500).json({ error: "Internal server error" });
