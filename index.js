@@ -134,19 +134,19 @@ async function run() {
     //---------showing comments---------------------------------------------------------------------------COMMENT--------------------------
     app.post("/comments", async (req, res) => {
       const comment = req.body;
-      console.log(comment,'.................................123');
+      console.log(comment, '.................................123');
       const result = await commentCollection.insertOne(comment);
       res.send(result);
     });
 
     app.get("/comments", async (req, res) => {
       const blogId = req.query.id;
-      const userEmail=req.query.userEmail
-      const query_0 = { BlogId:blogId}
-      const query_1 = { BlogId:blogId,userEmail:userEmail}
+      const userEmail = req.query.userEmail
+      const query_0 = { BlogId: blogId }
+      const query_1 = { BlogId: blogId, userEmail: userEmail }
       const allUserComments = await commentCollection.find(query_0).toArray()
       const userComments = await commentCollection.find(query_1).toArray();
-      res.send({allUserComments,userComments})
+      res.send({ allUserComments, userComments })
     })
 
 
@@ -172,8 +172,8 @@ async function run() {
     });
     app.get("/blogs/:id", async (req, res) => {
       const id = req.params.id
-      console.log(id,'---------------------------------------160')
-      const query = {_id:new ObjectId(id)}
+      console.log(id, '---------------------------------------160')
+      const query = { _id: new ObjectId(id) }
       // const cursor = blogsCollection.find();
       const result = await blogsCollection.findOne(query);
       res.send(result);
@@ -686,7 +686,7 @@ async function run() {
       if (id) {
         const query = { _id: new ObjectId(id) }
         const price = await pricingCollection.findOne(query)
-        console.log(price,'.............................................686')
+        console.log(price, '.............................................686')
         return res.send(price);
       }
       else {
@@ -746,9 +746,6 @@ async function run() {
     });
 
 
-    // STORE_ID = "abc65019fe81c973"
-    // STORE_PASS = "abc65019fe81c973@ssl"
-
     /* SSLCommerz Payment api  */
     const transition_id = new ObjectId().toString();
     app.post("/sslPayment", async (req, res) => {
@@ -758,27 +755,27 @@ async function run() {
       const productInfo = req.body;
       // console.log(productInfo);
       const data = {
-        total_amount: productInfo?.postCode,
+        total_amount: productInfo?.price,
         currency: productInfo?.currency,
         tran_id: transition_id, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/paymentOrder/success/${transition_id}`,
-        fail_url: `http://localhost:5000/paymentOrder/fail/${transition_id}`,
+        success_url: `http://localhost:4000/paymentOrder/success/${transition_id}`,
+        fail_url: `http://localhost:4000/paymentOrder/fail/${transition_id}`,
         cancel_url: 'http://localhost:3030/cancel',
         ipn_url: 'http://localhost:3030/ipn',
         shipping_method: 'Courier',
-        product_name: productInfo?.paymentName,
+        product_name: productInfo?.packageName,
         product_category: "Electronic",
         product_profile: "general",
-        cus_name: productInfo?.name,
+        cus_name: productInfo?.userName,
         cus_email: productInfo?.email,
         cus_add1: productInfo?.address,
         cus_add2: "Dhaka",
         cus_city: "Dhaka",
         cus_state: "Dhaka",
-        cus_postcode: productInfo?.postCode,
+        cus_postcode: productInfo?.date,
         cus_country: "Bangladesh",
         cus_phone: productInfo?.phone,
-        cus_fax: "01711111111",
+        cus_fax: productInfo?.paymentId,
         ship_name: "Customer Name",
         ship_add1: "Dhaka",
         ship_add2: "Dhaka",
@@ -827,6 +824,18 @@ async function run() {
         }
       });
     });
+
+    app.get("/sslPayment/:email", async (req, res) => {
+    // app.get("/sslPayment", async (req, res) => {
+      const email = req.params.email;
+      console.log("rjkg argorigjkrek",email);
+      if (!email) {
+       return res.send([]);
+      }
+      const query = { email: email };
+      const result = await sslCommerzCollection.find(query).toArray();
+      res.send(result);
+    })
 
     /* forum communication */
     app.post("/forumPost", async (req, res) => {
