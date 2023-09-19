@@ -63,7 +63,6 @@ async function run() {
     // await client.connect();
 
     // Database collection
-    let tempCollection;
     const userCollection = client.db("E-ExaminationPro").collection("users");
     const shortQuestionCollection = client
       .db("E-ExaminationPro")
@@ -115,9 +114,6 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("result_Collection");
     // const sslCommerzCollection = client.db("E-ExaminationPro").collection("sslCommerz");
-
-    //---------------- bijoy
-
     const blogsCollection = client.db("E-ExaminationPro").collection("blogs");
     const commentCollection = client
       .db("E-ExaminationPro")
@@ -129,12 +125,11 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("packagePricing");
 
-      const sslCommerzCollection = client.db("E-ExaminationPro").collection("sslCommerz")
+    const sslCommerzCollection = client.db("E-ExaminationPro").collection("sslCommerz")
 
     //---------showing comments---------------------------------------------------------------------------COMMENT--------------------------
     app.post("/comments", async (req, res) => {
       const comment = req.body;
-      console.log(comment, ".................................123");
       const result = await commentCollection.insertOne(comment);
       res.send(result);
     });
@@ -149,17 +144,9 @@ async function run() {
       res.send({ allUserComments, userComments });
     });
 
-    // app.get('/comments/:id', async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) };
-    //   const result = await commentCollection.findOne(query).toArray();
-    //   res.send(result)
-    // })
-
     //------------for adding blogs by instructor
     app.post("/blogs", async (req, res) => {
       const addedBlog = req.body;
-      console.log(addedBlog);
       const result = await blogsCollection.insertOne(addedBlog);
       res.send(result);
     });
@@ -171,18 +158,21 @@ async function run() {
     });
     app.get("/blogs/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id, "---------------------------------------160");
       const query = { _id: new ObjectId(id) };
-      // const cursor = blogsCollection.find();
       const result = await blogsCollection.findOne(query);
+      res.send(result);
+    });
+    
+    app.delete("/blogs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.deleteOne(query);
       res.send(result);
     });
 
     ///// JWT /////
     app.post("/jwt", (req, res) => {
-      console.log("hit jwt 107");
       const userEmail = req.body;
-      console.log(userEmail);
       const token = jwt.sign(userEmail, `${process.env.SECRETE_TOKEN}`, {
         expiresIn: "7d",
       });
@@ -203,18 +193,15 @@ async function run() {
       const existingSubject = await subjectCollection.findOne(query);
 
       if (existingSubject) {
-        console.log("hit line 413");
         return res.send({ msg: "Already Created" });
       }
       const result = await subjectCollection.insertOne(data);
       res.send(result);
-      console.log(data, "--------------------------410");
     });
 
     app.post("/questionPaper", async (req, res) => {
       const question = req.body;
-      console.log(question);
-      const query = { exam_code: question.exam_code };
+      const query = { exam_code: question.exam_code }
       const existingUser = await questionCollection.findOne(query);
       if (existingUser) {
         const result = { code: "duplicate" };
@@ -249,7 +236,6 @@ async function run() {
       }
       const examId = req.query.examID;
       if (examId) {
-        console.log(examId, "------------------------219");
         const query = { examID: examId };
         const result = await appliedLiveExamCollection.find(query).toArray();
         return res.send(result);
@@ -257,7 +243,6 @@ async function run() {
 
       const instructor_email = req.query.instructor_email;
       if (instructor_email) {
-        console.log(instructor_email, "------------------------219");
         const query = {
           _id: new ObjectId(examId),
           instructor_email: instructor_email,
@@ -271,7 +256,6 @@ async function run() {
       const instructor_email = req.query.instructor_email;
       const type = req.query.type;
       const subject = req.query.subject;
-      console.log(instructor_email, "-------------line 160");
       const query0 = { email: instructor_email };
       const result1 = await userCollection.findOne(query0);
 
@@ -290,22 +274,12 @@ async function run() {
         const result = await questionCollection.find(query).toArray();
         return res.send(result);
       } else {
-        console.log("hit-170");
         const query = { subjectName: subject, type: type, batch: stu_Batch };
         const allQuestion = await questionCollection.find(query).toArray();
-        //console.log(allQuestion,'-------------------------------------173')
         const query2 = {
           stu_email: instructor_email,
         };
         const examResult = await resultCollection.find(query2).toArray();
-        console.log(examResult);
-        const response2 = allQuestion.map((question) =>
-          console.log(question._id.toString(), "-------------line 175")
-        );
-        const response1 = examResult.map((question) =>
-          console.log(question.examID.toString(), "-------------line 176")
-        );
-
         const response = allQuestion.map((question) => ({
           ...question,
           isCompleted: examResult.some(
@@ -314,17 +288,14 @@ async function run() {
             ? true
             : false,
         }));
-        console.log(response, ".......................................237");
         res.send(response);
       }
     });
 
     app.get("/questionCode", async (req, res) => {
       const code = req.query.code;
-      console.log(code);
       const query = { exam_code: code };
       const result = await questionCollection.findOne(query);
-      console.log(result, "---------------------242");
       if (result) {
         res.send({ result: true });
       } else {
@@ -342,18 +313,118 @@ async function run() {
     ///// post get result ----------------------------------------new Abir result
     app.get("/result", async (req, res) => {
       const examId = req.query.examId;
-      console.log("int id", examId);
+      const email = req.query.email
+      const query = { examID: examId, stu_email: email };
+      const result = await resultCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.get("/allresultBySubject", async (req, res) => {
+      const examId = req.query.examsID;
       const query = { examID: examId };
-      // const result = await resultCollection.find().toArray()
       const result = await resultCollection.find(query).toArray();
       res.send(result);
+
     });
+
     app.post("/examdata", async (req, res) => {
       const data = req.body;
+      const studentEmail = data.stu_email
+      const examId = data.examID
+      const query2 = { stu_email: studentEmail, examID: examId }
+      const existingUser = await resultCollection.findOne(query2);
+      if (existingUser) {
+        return res.send([]);
+      }
+      const seventyPercentMark = (70 / 100) * data.totalMark;
+      const fortyPercentMark = (40 / 100) * data.totalMark;
+      const query = { email: studentEmail }
+      const userData = await userCollection.findOne(query)
+
+      if (data.mark >= seventyPercentMark) {
+        if (!userData?.gems) {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: 1,
+            },
+          };
+          const result = await userCollection.updateOne(query, doc, options);
+        }
+        else {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: userData.gems + 1,
+            },
+          };
+          const result = await userCollection.updateOne(query, doc, options);
+        }
+      }
+      else if (data.mark >= fortyPercentMark) {
+        if (!userData?.gems) {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: 0.5,
+            },
+          };
+          const result = await userCollection.updateOne(query, doc, options);
+        }
+        else {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: userData.gems + 0.5,
+            },
+          };
+          await userCollection.updateOne(query, doc, options);
+        }
+      }
+      else {
+        if (!userData?.gems) {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: 0,
+            },
+          };
+          await userCollection.updateOne(query, doc, options);
+        }
+        else {
+          const options = { upsert: true }
+          const doc = {
+            $set: {
+              gems: userData.gems + 0,
+            },
+          };
+          await userCollection.updateOne(query, doc, options);
+        }
+      }
       const result = await resultCollection.insertOne(data);
       res.send(result);
-      console.log(data);
     });
+
+
+    //reduce gems
+    app.patch('/reduceGems', async (req, res) => {
+      const email = req.query.email
+      const query = { email: email }
+      const userGems=await userCollection.findOne(query)
+
+      if(userGems.gems==0){
+        return res.send({gems:0})
+      }
+
+      const doc = {
+        $set: {
+          gems: userGems.gems - 1,
+        },
+      };
+      await userCollection.updateOne(query, doc);
+    })
+
+
     //---------------------------------------------------------------------------------get user exam data
     app.get("/userGivenExam/:email", async (req, res) => {
       const email = req.params.email;
@@ -363,10 +434,7 @@ async function run() {
         .sort({ _id: -1 })
         .toArray();
       res.send(result);
-      console.log(
-        email,
-        "-----------------------------------------------line 298"
-      );
+
     });
 
     ////////////////User Get,///////////////////--------------------------------------------abir
@@ -441,7 +509,6 @@ async function run() {
     // find Admin from database
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      console.log(req.decoded.email, "line 205");
       if (req.decoded.email !== email) {
         return res.send({ admin: false });
       }
@@ -454,7 +521,6 @@ async function run() {
     // find instructor from database
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      console.log(req.decoded.email, "line 218");
       if (req.decoded.email !== email) {
         return res.send({ instructor: false });
       }
@@ -544,7 +610,6 @@ async function run() {
     // get short question from database
     app.get("/shortQ", async (req, res) => {
       const subject = req.query.subject;
-      console.log(subject);
       const query = { subject: subject };
       const result = await shortQuestionCollection.find(query).toArray();
       res.send(result);
@@ -572,7 +637,6 @@ async function run() {
     // get long question from database
     app.get("/longQ", async (req, res) => {
       const subject = req.query.subject;
-      console.log(subject);
       const query = { subject: subject };
       const result = await longQuestionCollection.find(query).toArray();
       res.send(result);
@@ -621,7 +685,6 @@ async function run() {
     //---------------------------------------------------------------------------also abir
     app.get("/notice", async (req, res) => {
       const selectedID = req.query.selectedID;
-      console.log(selectedID, "hit-----");
       if (selectedID) {
         const query4 = { _id: new ObjectId(selectedID) };
         const result = await noticeCollection.findOne(query4);
@@ -630,7 +693,6 @@ async function run() {
       const instructorEmail = req.query.instructor;
       query0 = { email: instructorEmail };
       result = await userCollection.findOne(query0);
-      console.log(result);
       if (result?.role == "instructor") {
         const result = await noticeCollection.find(query0).toArray();
         return res.send(result);
@@ -642,9 +704,7 @@ async function run() {
           $and: [{ student_email: student_email }, { examID: exam_id }],
         };
         const existingUser = await appliedLiveExamCollection.findOne(query1);
-        console.log(existingUser, "line 412", exam_id, student_email);
         if (existingUser) {
-          console.log("hit line 413");
           return res.send({ msg: "Already Applied" });
         }
         const query2 = { _id: new ObjectId(exam_id) };
@@ -664,32 +724,24 @@ async function run() {
         $and: [{ examID: id }, { examCode: examCode }],
       };
       const result = await liveExamQuestionCollection.findOne(query);
-      console.log(result);
       res.send({ code: result?.secretCode });
     });
 
     app.post("/liveQuestionPaper", async (req, res) => {
       const data = req.body;
-      console.log(data);
       const result = await liveExamQuestionCollection.insertOne(data);
       res.send(result);
     });
 
     // Pricing
     app.get("/price", async (req, res) => {
-
       const id = req.query.id
-
-      console.log(id, '-----------------------------------------------------681')
-
       if (id) {
         const query = { _id: new ObjectId(id) }
         const price = await pricingCollection.findOne(query)
-        console.log(price,'.............................................686')
         return res.send(price);
       }
       else {
-
         const price = await pricingCollection.find().toArray();
         res.send(price);
       }
@@ -711,7 +763,6 @@ async function run() {
 
     app.post("/payments", verifyJWT, async (req, res) => {
       const payment = req.body;
-      console.log("Payment", payment);
       const insertResult = await paymentCollection.insertOne(payment);
       const insertHistory = await paymentHistory.insertOne(payment);
       res.send({ insertResult, insertHistory });
@@ -737,25 +788,16 @@ async function run() {
       try {
         const response = await axios.get("https://zenquotes.io/api/quotes");
         const data = response.data;
-        // console.log(data);
         res.json(data);
       } catch (error) {
         res.status(500).json({ error: "Internal server error" });
       }
     });
 
-
-    // STORE_ID = "abc65019fe81c973"
-    // STORE_PASS = "abc65019fe81c973@ssl"
-
     /* SSLCommerz Payment api  */
     const transition_id = new ObjectId().toString();
     app.post("/sslPayment", async (req, res) => {
-      // const orderProduct = await paymentCollection.findOne({
-      //   _id: new ObjectId(req.body.id)
-      // });
       const productInfo = req.body;
-      // console.log(productInfo);
       const data = {
         total_amount: productInfo?.postCode,
         currency: productInfo?.currency,
@@ -813,7 +855,6 @@ async function run() {
         if (result.modifiedCount > 0) {
           res.redirect(`http://localhost:5173/paymentOrder/success/${transId}`);
         }
-        // console.log("655", transId);
       });
 
       app.post("/paymentOrder/fail/:tranId", async (req, res) => {
