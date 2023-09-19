@@ -317,6 +317,7 @@ async function run() {
     app.get("/allresultBySubject", async (req, res) => {
       const examId = req.query.examsID;
       const query = { examID: examId };
+      // const result = await resultCollection.find().toArray()
       const result = await resultCollection.find(query).toArray();
       res.send(result);
 
@@ -327,8 +328,11 @@ async function run() {
 
     app.post("/examdata", async (req, res) => {
       const data = req.body;
+
+      console.log(data);
       const studentEmail = data.stu_email
       const examId = data.examID
+
       const query2 = { stu_email: studentEmail, examID: examId }
       const existingUser = await resultCollection.findOne(query2);
       if (existingUser) {
@@ -337,9 +341,14 @@ async function run() {
 
       const seventyPercentMark = (70 / 100) * data.totalMark;
       const fortyPercentMark = (40 / 100) * data.totalMark;
+
+
       const query = { email: studentEmail }
       const userData = await userCollection.findOne(query)
+
       if (data.mark >= seventyPercentMark) {
+        //  console.log('70%',seventyPercentMark,studentPercentage,fortyPercentMark,data.mark,data.totalMark)
+
         if (!userData?.gems) {
           const options = { upsert: true }
           const doc = {
@@ -380,6 +389,8 @@ async function run() {
           };
           await userCollection.updateOne(query, doc, options);
         }
+
+
       }
       else {
 
@@ -406,8 +417,39 @@ async function run() {
 
       const result = await resultCollection.insertOne(data);
       res.send(result);
+
+    });
+
+
+    //reduce gems
+    app.patch('/reduceGems', async (req, res) => {
+      const email = req.query.email
+      const query = { email: email }
+      const userGems = await userCollection.findOne(query)
+
+      if (userGems.gems == 0) {
+        return res.send({ gems: 0 })
+      }
+
+      const doc = {
+        $set: {
+          gems: userGems.gems - 1,
+        },
+      };
+      await userCollection.updateOne(query, doc);
     })
-    // get user exam data
+
+
+
+
+
+
+
+
+
+
+
+    //---------------------------------------------------------------------------------get user exam data
     app.get("/userGivenExam/:email", async (req, res) => {
       const email = req.params.email;
       const query = { stu_email: email };
@@ -891,6 +933,87 @@ async function run() {
       res.send(result);
     });
 
+    ///////////------------------------------------------Leaderboard
+    app.get("/getBatch_Subject", async (req, res) => {
+      const batch_subject = await resultCollection.find().toArray()
+
+      const uniqueBatch = []
+      const uniqueSubject = []
+      const uniqueType = []
+
+      for (const data of batch_subject) {
+
+        if (!uniqueBatch.includes(data.batch)) {
+          uniqueBatch.push(data.batch);
+        }
+        if (!uniqueSubject.includes(data.subject)) {
+          uniqueSubject.push(data.subject);
+        }
+
+        if (!uniqueType.includes(data.examType)) {
+          uniqueType.push(data.examType);
+        }
+
+      }
+      res.send({ batch: uniqueBatch, subject: uniqueSubject, type: uniqueType })
+    })
+
+
+    app.get("/leaderboardResult", async (req, res) => {
+      const query = {};
+
+      if (req.query.inputSearch) {
+        query.stu_email = req.query.inputSearch;
+      }
+
+      if (req.query.batch) {
+        query.batch = req.query.batch;
+      }
+
+      if (req.query.subject) {
+        query.subjectName = req.query.subject;
+      }
+
+      if (req.query.type) {
+        query.examType = req.query.type;
+
+      }
+      console.log(query)
+      const sortBy = req.query.sort; // Default to ascending order
+
+
+      if (sortBy) {
+        const batch_subject = await resultCollection.find(query).toArray()
+        const studentResults = [];
+        batch_subject.forEach((record) => {
+          const { mark, stu_email, stu_image, batch, examType, stu_name } = record;
+
+          // Check if the student already exists in the studentResults array
+          const existingStudent = studentResults.find((student) => student.stu_email === stu_email);
+
+          if (existingStudent) {
+            // Update the total mark for the existing student
+            existingStudent.totalMark += mark;
+            existingStudent.stu_image = stu_image
+            existingStudent.batch = batch
+          } else {
+            // Create a new student object and add it to the studentResults array
+            studentResults.push({ stu_email, totalMark: mark, subject: req.query.subject ? req.query.subject : 'All Subject', stu_image: stu_image, batch: batch, examType: examType, stu_name: stu_name });
+          }
+        })
+        studentResults.sort((a, b) => b.totalMark - a.totalMark)
+        return res.send(studentResults)
+      }
+
+      try {
+        const result = await resultCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    })
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log(
@@ -910,3 +1033,6 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`E-examPro Server is running on port ${port}`);
 });
+
+
+
