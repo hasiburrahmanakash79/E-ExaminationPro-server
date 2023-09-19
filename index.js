@@ -1030,3 +1030,13 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   //console.log(`E-examPro Server is running on port ${port}`);
 });
+
+
+
+// const doc = {
+//   $set: {
+//     gems: userGems.gems - 1,
+//   },
+// };
+// await userCollection.updateOne(query, doc);
+// })
