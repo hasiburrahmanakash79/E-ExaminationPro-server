@@ -872,7 +872,7 @@ async function run() {
     app.get("/sslPayment/:email", async (req, res) => {
     // app.get("/sslPayment", async (req, res) => {
       const email = req.params.email;
-      console.log("rjkg argorigjkrek",email);
+      console.log("SSL payment user: ",email);
       if (!email) {
        return res.send([]);
       }
