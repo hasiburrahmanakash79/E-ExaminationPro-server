@@ -64,12 +64,11 @@ async function run() {
 
     // Database collection
     const userCollection = client.db("E-ExaminationPro").collection("users");
-    const shortQuestionCollection = client
+    const writtenQuestionCollection = client
       .db("E-ExaminationPro")
-      .collection("shortQuestions");
-    const longQuestionCollection = client
-      .db("E-ExaminationPro")
-      .collection("longQuestions");
+      .collection("writtenExamQuestions");
+    const writtenAnswersReviewCollection = client.db("E-ExaminationPro")
+      .collection("written_answers_reviews")
     const quizQuestionCollection = client
       .db("E-ExaminationPro")
       .collection("quizQuestions");
@@ -582,7 +581,7 @@ async function run() {
       res.send(result);
     });
 
-    // Delete short question from database
+    // Delete  question from database
     app.delete("/quizQ/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -590,48 +589,34 @@ async function run() {
       res.send(result);
     });
 
-    // get short question from database
-    app.get("/shortQ", async (req, res) => {
+    // get written question from database
+    app.get("/written-questions", async (req, res) => {
       const subject = req.query.subject;
       const query = { subject: subject };
-      const result = await shortQuestionCollection.find(query).toArray();
+      const result = await writtenQuestionCollection.find(query).toArray();
       res.send(result);
     });
 
-    // Post short question from database
-    app.post("/shortQ", async (req, res) => {
+    // Post written question from database
+    app.post("/written-questions", async (req, res) => {
       const addShortQ = req.body;
-      const result = await shortQuestionCollection.insertOne(addShortQ);
+      const result = await writtenQuestionCollection.insertOne(addShortQ);
       res.send(result);
     });
 
-    // Delete short question from database
-    app.delete("/shortQ/:id", async (req, res) => {
+    // Delete written question from database
+    app.delete("/written-questions/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await shortQuestionCollection.deleteOne(query);
+      const result = await writtenQuestionCollection.deleteOne(query);
       res.send(result);
     });
-
-    /**=========================
-     * Long question api's
-     * ====================
-     */
-    // get long question from database
-    app.get("/longQ", async (req, res) => {
-      const subject = req.query.subject;
-      const query = { subject: subject };
-      const result = await longQuestionCollection.find(query).toArray();
-      res.send(result);
-    });
-
-    // Post long question from database
-    app.post("/longQ", async (req, res) => {
-      const addLongQ = req.body;
-      const result = await longQuestionCollection.insertOne(addLongQ);
-      res.send(result);
-    });
-
+    // written-user answers to db for instructor to review
+    app.post('/written-answers', async (req, res) => {
+      const userAnswers = req.body
+      const result = await writtenAnswersReviewCollection.insertOne(userAnswers)
+      res.send(result)
+    })
     // get fill in the blank question from database
     app.get("/blankQ", async (req, res) => {
       const result = await fillInTheBlankCollection.find().toArray();
