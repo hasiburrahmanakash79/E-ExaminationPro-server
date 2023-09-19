@@ -327,9 +327,6 @@ async function run() {
 
     });
 
-
-
-
     app.post("/examdata", async (req, res) => {
       const data = req.body;
       const studentEmail = data.stu_email
@@ -339,11 +336,11 @@ async function run() {
       if (existingUser) {
         return res.send([]);
       }
-
       const seventyPercentMark = (70 / 100) * data.totalMark;
       const fortyPercentMark = (40 / 100) * data.totalMark;
       const query = { email: studentEmail }
       const userData = await userCollection.findOne(query)
+
       if (data.mark >= seventyPercentMark) {
         if (!userData?.gems) {
           const options = { upsert: true }
@@ -364,9 +361,7 @@ async function run() {
           const result = await userCollection.updateOne(query, doc, options);
         }
       }
-
       else if (data.mark >= fortyPercentMark) {
-
         if (!userData?.gems) {
           const options = { upsert: true }
           const doc = {
@@ -387,7 +382,6 @@ async function run() {
         }
       }
       else {
-
         if (!userData?.gems) {
           const options = { upsert: true }
           const doc = {
@@ -406,13 +400,32 @@ async function run() {
           };
           await userCollection.updateOne(query, doc, options);
         }
-
       }
-
       const result = await resultCollection.insertOne(data);
       res.send(result);
+    });
+
+
+    //reduce gems
+    app.patch('/reduceGems', async (req, res) => {
+      const email = req.query.email
+      const query = { email: email }
+      const userGems=await userCollection.findOne(query)
+
+      if(userGems.gems==0){
+        return res.send({gems:0})
+      }
+
+      const doc = {
+        $set: {
+          gems: userGems.gems - 1,
+        },
+      };
+      await userCollection.updateOne(query, doc);
     })
-    // get user exam data
+
+
+    //---------------------------------------------------------------------------------get user exam data
     app.get("/userGivenExam/:email", async (req, res) => {
       const email = req.params.email;
       const query = { stu_email: email };
