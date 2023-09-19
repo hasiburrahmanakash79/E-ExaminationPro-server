@@ -6,7 +6,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.PAYMENT_SECRETE_KEY);
 
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 5000;
 
 // Middleware
 const corsConfig = {
@@ -312,6 +312,10 @@ async function run() {
       const result = await questionCollection.findOne(query);
       res.send(result);
     });
+    app.get("/allQuestions", async (req, res) => {
+      const result = await questionCollection.find().toArray();
+      res.send(result);
+    });
 
     ///// post get result ----------------------------------------new Abir result
     app.get("/result", async (req, res) => {
@@ -329,6 +333,12 @@ async function run() {
       console.log(data);
     });
 
+
+    // get all results
+    app.get("/allResults", async(req,res) => {
+      const result = await resultCollection.find().toArray();
+      res.send(result);
+    })
     ////////////////User Get,///////////////////--------------------------------------------abir
     app.get("/users", async (req, res) => {
       const email = req.query.email
