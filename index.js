@@ -784,9 +784,13 @@ async function run() {
     /* SSLCommerz Payment api  */
     const transition_id = new ObjectId().toString();
     app.post("/sslPayment", async (req, res) => {
+      // const orderProduct = await paymentCollection.findOne({
+      //   _id: new ObjectId(req.body.id)
+      // });
       const productInfo = req.body;
+      // console.log(productInfo);
       const data = {
-        total_amount: productInfo?.price,
+        total_amount: productInfo?.postCode,
         currency: productInfo?.currency,
         tran_id: transition_id, // use unique tran_id for each api call
         success_url: `http://localhost:4000/paymentOrder/success/${transition_id}`,
@@ -794,39 +798,42 @@ async function run() {
         cancel_url: 'http://localhost:3030/cancel',
         ipn_url: 'http://localhost:3030/ipn',
         shipping_method: 'Courier',
-        product_name: productInfo?.packageName,
-        product_category: "Electronic",
-        product_profile: "general",
-        cus_name: productInfo?.userName,
+        product_name: productInfo?.paymentName,
+        product_category: 'Electronic',
+        product_profile: 'general',
+        cus_name: productInfo?.name,
         cus_email: productInfo?.email,
         cus_add1: productInfo?.address,
-        cus_add2: "Dhaka",
-        cus_city: "Dhaka",
-        cus_state: "Dhaka",
-        cus_postcode: productInfo?.date,
-        cus_country: "Bangladesh",
+        cus_add2: 'Dhaka',
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
+        cus_postcode: productInfo?.postCode,
+        cus_country: 'Bangladesh',
         cus_phone: productInfo?.phone,
-        cus_fax: productInfo?.paymentId,
-        ship_name: "Customer Name",
-        ship_add1: "Dhaka",
-        ship_add2: "Dhaka",
-        ship_city: "Dhaka",
-        ship_state: "Dhaka",
+        cus_fax: '01711111111',
+        ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
         ship_postcode: 1000,
-        ship_country: "Bangladesh",
+        ship_country: 'Bangladesh',
       };
-      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-      sslcz.init(data).then((apiResponse) => {
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+      sslcz.init(data).then(apiResponse => {
         // Redirect the user to payment gateway
-        let GatewayPageURL = apiResponse.GatewayPageURL;
+        let GatewayPageURL = apiResponse.GatewayPageURL
         res.send({ url: GatewayPageURL });
 
         const confirmOrder = {
           productInfo,
           confirmStatus: false,
-          transitionId: transition_id,
+          transitionId: transition_id
         };
-        const result = sslCommerzCollection.insertOne(confirmOrder); //-------------------------------------------------------todo
+        const result = sslCommerzCollection.insertOne(confirmOrder);
+
+
+        // console.log('Redirecting to: ', GatewayPageURL)
       });
 
       app.post("/paymentOrder/success/:tranId", async (req, res) => {
@@ -835,36 +842,24 @@ async function run() {
           { transitionId: transId },
           {
             $set: {
-              confirmStatus: true,
-            },
+              confirmStatus: true
+            }
           }
-        );
+        )
         if (result.modifiedCount > 0) {
-          res.redirect(`http://localhost:5173/paymentOrder/success/${transId}`);
+          res.redirect(`http://localhost:5173/paymentOrder/success/${transId}`)
         }
-      });
+        // console.log("655", transId);
+      })
 
       app.post("/paymentOrder/fail/:tranId", async (req, res) => {
         const transId = req.params.tranId;
-        const result = await sslCommerzCollection.deleteOne({
-          transitionId: transId,
-        });
+        const result = await sslCommerzCollection.deleteOne({ transitionId: transId });
         if (result.deletedCount) {
-          res.redirect(`http://localhost:5173/paymentOrder/fail/${transId}`);
+          res.redirect(`http://localhost:5173/paymentOrder/fail/${transId}`)
         }
-      });
-    });
+      })
 
-    app.get("/sslPayment/:email", async (req, res) => {
-    // app.get("/sslPayment", async (req, res) => {
-      const email = req.params.email;
-      console.log("SSL payment user: ",email);
-      if (!email) {
-       return res.send([]);
-      }
-      const query = { email: email };
-      const result = await sslCommerzCollection.find(query).toArray();
-      res.send(result);
     })
 
     /* forum communication */
