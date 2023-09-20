@@ -303,6 +303,44 @@ async function run() {
       }
     });
 
+    app.get("/questionDate&Time", async (req, res) => {
+
+      const date = req.query.date
+      const time = req.query.examTime
+      const batch = req.query.batch
+
+      const query = { $and: [{ date: date }, { examTime: time }, { batch: batch }] }
+
+      const query1 = { $and: [{ date: date }, { batch: batch }] }
+      const result1 = await questionCollection.find(query1).toArray();
+
+      let  isDateTimeRepeat=[] ;
+
+      if (time) {
+
+        for (data of result1) {
+          console.log(data.examTime
+          )
+          const timeGap =  Math.abs((new Date(`${data.date}T${data.examTime}`) - new Date(`${date}T${time}`)) / 60000)
+            console.log(timeGap,'gap')
+          if (timeGap < 15) {
+            isDateTimeRepeat.push(false)
+          }
+
+        }
+
+      }
+      console.log(isDateTimeRepeat)
+     if (isDateTimeRepeat.length==0) {
+        res.send({ result: false });
+      } else {
+        res.send({ result: true });
+      }
+
+    });
+
+
+
     app.get("/questionPaper/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
