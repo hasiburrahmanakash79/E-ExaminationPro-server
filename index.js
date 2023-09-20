@@ -64,12 +64,11 @@ async function run() {
 
     // Database collection
     const userCollection = client.db("E-ExaminationPro").collection("users");
-    const shortQuestionCollection = client
+    const writtenQuestionCollection = client
       .db("E-ExaminationPro")
-      .collection("shortQuestions");
-    const longQuestionCollection = client
-      .db("E-ExaminationPro")
-      .collection("longQuestions");
+      .collection("writtenExamQuestions");
+    const writtenAnswersReviewCollection = client.db("E-ExaminationPro")
+      .collection("written_answers_reviews")
     const quizQuestionCollection = client
       .db("E-ExaminationPro")
       .collection("quizQuestions");
@@ -323,6 +322,7 @@ async function run() {
     app.get("/allresultBySubject", async (req, res) => {
       const examId = req.query.examsID;
       const query = { examID: examId };
+      // const result = await resultCollection.find().toArray()
       const result = await resultCollection.find(query).toArray();
       res.send(result);
 
@@ -600,7 +600,7 @@ async function run() {
       res.send(result);
     });
 
-    // Delete short question from database
+    // Delete  question from database
     app.delete("/quizQ/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -608,48 +608,34 @@ async function run() {
       res.send(result);
     });
 
-    // get short question from database
-    app.get("/shortQ", async (req, res) => {
+    // get written question from database
+    app.get("/written-questions", async (req, res) => {
       const subject = req.query.subject;
       const query = { subject: subject };
-      const result = await shortQuestionCollection.find(query).toArray();
+      const result = await writtenQuestionCollection.find(query).toArray();
       res.send(result);
     });
 
-    // Post short question from database
-    app.post("/shortQ", async (req, res) => {
+    // Post written question from database
+    app.post("/written-questions", async (req, res) => {
       const addShortQ = req.body;
-      const result = await shortQuestionCollection.insertOne(addShortQ);
+      const result = await writtenQuestionCollection.insertOne(addShortQ);
       res.send(result);
     });
 
-    // Delete short question from database
-    app.delete("/shortQ/:id", async (req, res) => {
+    // Delete written question from database
+    app.delete("/written-questions/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await shortQuestionCollection.deleteOne(query);
+      const result = await writtenQuestionCollection.deleteOne(query);
       res.send(result);
     });
-
-    /**=========================
-     * Long question api's
-     * ====================
-     */
-    // get long question from database
-    app.get("/longQ", async (req, res) => {
-      const subject = req.query.subject;
-      const query = { subject: subject };
-      const result = await longQuestionCollection.find(query).toArray();
-      res.send(result);
-    });
-
-    // Post long question from database
-    app.post("/longQ", async (req, res) => {
-      const addLongQ = req.body;
-      const result = await longQuestionCollection.insertOne(addLongQ);
-      res.send(result);
-    });
-
+    // written-user answers to db for instructor to review
+    app.post('/written-answers', async (req, res) => {
+      const userAnswers = req.body
+      const result = await writtenAnswersReviewCollection.insertOne(userAnswers)
+      res.send(result)
+    })
     // get fill in the blank question from database
     app.get("/blankQ", async (req, res) => {
       const result = await fillInTheBlankCollection.find().toArray();
@@ -982,14 +968,14 @@ async function run() {
 
       }
       console.log(query)
-      const sortBy = req.query.sort ; // Default to ascending order
+      const sortBy = req.query.sort; // Default to ascending order
 
 
       if (sortBy) {
         const batch_subject = await resultCollection.find(query).toArray()
         const studentResults = [];
         batch_subject.forEach((record) => {
-          const { mark, stu_email,stu_image ,batch,examType,stu_name } = record;
+          const { mark, stu_email, stu_image, batch, examType, stu_name } = record;
 
           // Check if the student already exists in the studentResults array
           const existingStudent = studentResults.find((student) => student.stu_email === stu_email);
@@ -997,11 +983,11 @@ async function run() {
           if (existingStudent) {
             // Update the total mark for the existing student
             existingStudent.totalMark += mark;
-            existingStudent.stu_image=stu_image
-            existingStudent.batch=batch
+            existingStudent.stu_image = stu_image
+            existingStudent.batch = batch
           } else {
             // Create a new student object and add it to the studentResults array
-            studentResults.push({ stu_email, totalMark: mark, subject:req.query.subject?req.query.subject:'All Subject',stu_image:stu_image,batch:batch,examType:examType,stu_name:stu_name });
+            studentResults.push({ stu_email, totalMark: mark, subject: req.query.subject ? req.query.subject : 'All Subject', stu_image: stu_image, batch: batch, examType: examType, stu_name: stu_name });
           }
         })
         studentResults.sort((a, b) => b.totalMark - a.totalMark)
