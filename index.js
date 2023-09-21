@@ -64,12 +64,11 @@ async function run() {
 
     // Database collection
     const userCollection = client.db("E-ExaminationPro").collection("users");
-    const shortQuestionCollection = client
+    const writtenQuestionCollection = client
       .db("E-ExaminationPro")
-      .collection("shortQuestions");
-    const longQuestionCollection = client
-      .db("E-ExaminationPro")
-      .collection("longQuestions");
+      .collection("writtenExamQuestions");
+    const writtenAnswersReviewCollection = client.db("E-ExaminationPro")
+      .collection("written_answers_reviews")
     const quizQuestionCollection = client
       .db("E-ExaminationPro")
       .collection("quizQuestions");
@@ -124,8 +123,8 @@ async function run() {
     const pricingCollection = client
       .db("E-ExaminationPro")
       .collection("packagePricing");
-
-    const sslCommerzCollection = client.db("E-ExaminationPro").collection("sslCommerz")
+    const sslCommerzCollection = client
+      .db("E-ExaminationPro").collection("sslCommerz")
 
     //---------showing comments---------------------------------------------------------------------------COMMENT--------------------------
     app.post("/comments", async (req, res) => {
@@ -136,13 +135,14 @@ async function run() {
 
     app.get("/comments", async (req, res) => {
       const blogId = req.query.id;
-      const userEmail = req.query.userEmail;
-      const query_0 = { BlogId: blogId };
-      const query_1 = { BlogId: blogId, userEmail: userEmail };
-      const allUserComments = await commentCollection.find(query_0).toArray();
+      const userEmail = req.query.userEmail
+      const query_0 = { BlogId: blogId }
+      const query_1 = { BlogId: blogId, userEmail: userEmail }
+      const allUserComments = await commentCollection.find(query_0).toArray()
       const userComments = await commentCollection.find(query_1).toArray();
-      res.send({ allUserComments, userComments });
-    });
+      res.send({ allUserComments, userComments })
+    })
+
 
     //------------for adding blogs by instructor
     app.post("/blogs", async (req, res) => {
@@ -326,6 +326,7 @@ async function run() {
     app.get("/allresultBySubject", async (req, res) => {
       const examId = req.query.examsID;
       const query = { examID: examId };
+      // const result = await resultCollection.find().toArray()
       const result = await resultCollection.find(query).toArray();
       res.send(result);
 
@@ -414,10 +415,10 @@ async function run() {
     app.patch('/reduceGems', async (req, res) => {
       const email = req.query.email
       const query = { email: email }
-      const userGems=await userCollection.findOne(query)
+      const userGems = await userCollection.findOne(query)
 
-      if(userGems.gems==0){
-        return res.send({gems:0})
+      if (userGems.gems == 0) {
+        return res.send({ gems: 0 })
       }
 
       const doc = {
@@ -609,7 +610,7 @@ async function run() {
       res.send(result);
     });
 
-    // Delete short question from database
+    // Delete  question from database
     app.delete("/quizQ/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -617,48 +618,34 @@ async function run() {
       res.send(result);
     });
 
-    // get short question from database
-    app.get("/shortQ", async (req, res) => {
+    // get written question from database
+    app.get("/written-questions", async (req, res) => {
       const subject = req.query.subject;
       const query = { subject: subject };
-      const result = await shortQuestionCollection.find(query).toArray();
+      const result = await writtenQuestionCollection.find(query).toArray();
       res.send(result);
     });
 
-    // Post short question from database
-    app.post("/shortQ", async (req, res) => {
+    // Post written question from database
+    app.post("/written-questions", async (req, res) => {
       const addShortQ = req.body;
-      const result = await shortQuestionCollection.insertOne(addShortQ);
+      const result = await writtenQuestionCollection.insertOne(addShortQ);
       res.send(result);
     });
 
-    // Delete short question from database
-    app.delete("/shortQ/:id", async (req, res) => {
+    // Delete written question from database
+    app.delete("/written-questions/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await shortQuestionCollection.deleteOne(query);
+      const result = await writtenQuestionCollection.deleteOne(query);
       res.send(result);
     });
-
-    /**=========================
-     * Long question api's
-     * ====================
-     */
-    // get long question from database
-    app.get("/longQ", async (req, res) => {
-      const subject = req.query.subject;
-      const query = { subject: subject };
-      const result = await longQuestionCollection.find(query).toArray();
-      res.send(result);
-    });
-
-    // Post long question from database
-    app.post("/longQ", async (req, res) => {
-      const addLongQ = req.body;
-      const result = await longQuestionCollection.insertOne(addLongQ);
-      res.send(result);
-    });
-
+    // written-user answers to db for instructor to review
+    app.post('/written-answers', async (req, res) => {
+      const userAnswers = req.body
+      const result = await writtenAnswersReviewCollection.insertOne(userAnswers)
+      res.send(result)
+    })
     // get fill in the blank question from database
     app.get("/blankQ", async (req, res) => {
       const result = await fillInTheBlankCollection.find().toArray();
@@ -807,49 +794,56 @@ async function run() {
     /* SSLCommerz Payment api  */
     const transition_id = new ObjectId().toString();
     app.post("/sslPayment", async (req, res) => {
+      // const orderProduct = await paymentCollection.findOne({
+      //   _id: new ObjectId(req.body.id)
+      // });
       const productInfo = req.body;
+      // console.log(productInfo);
       const data = {
         total_amount: productInfo?.postCode,
         currency: productInfo?.currency,
         tran_id: transition_id, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/paymentOrder/success/${transition_id}`,
-        fail_url: `http://localhost:5000/paymentOrder/fail/${transition_id}`,
-        cancel_url: "http://localhost:3030/cancel",
-        ipn_url: "http://localhost:3030/ipn",
-        shipping_method: "Courier",
+        success_url: `http://localhost:4000/paymentOrder/success/${transition_id}`,
+        fail_url: `http://localhost:4000/paymentOrder/fail/${transition_id}`,
+        cancel_url: 'http://localhost:3030/cancel',
+        ipn_url: 'http://localhost:3030/ipn',
+        shipping_method: 'Courier',
         product_name: productInfo?.paymentName,
-        product_category: "Electronic",
-        product_profile: "general",
+        product_category: 'Electronic',
+        product_profile: 'general',
         cus_name: productInfo?.name,
         cus_email: productInfo?.email,
         cus_add1: productInfo?.address,
-        cus_add2: "Dhaka",
-        cus_city: "Dhaka",
-        cus_state: "Dhaka",
+        cus_add2: 'Dhaka',
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
         cus_postcode: productInfo?.postCode,
-        cus_country: "Bangladesh",
+        cus_country: 'Bangladesh',
         cus_phone: productInfo?.phone,
-        cus_fax: "01711111111",
-        ship_name: "Customer Name",
-        ship_add1: "Dhaka",
-        ship_add2: "Dhaka",
-        ship_city: "Dhaka",
-        ship_state: "Dhaka",
+        cus_fax: '01711111111',
+        ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
         ship_postcode: 1000,
-        ship_country: "Bangladesh",
+        ship_country: 'Bangladesh',
       };
-      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-      sslcz.init(data).then((apiResponse) => {
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+      sslcz.init(data).then(apiResponse => {
         // Redirect the user to payment gateway
-        let GatewayPageURL = apiResponse.GatewayPageURL;
+        let GatewayPageURL = apiResponse.GatewayPageURL
         res.send({ url: GatewayPageURL });
 
         const confirmOrder = {
           productInfo,
           confirmStatus: false,
-          transitionId: transition_id,
+          transitionId: transition_id
         };
-        const result = sslCommerzCollection.insertOne(confirmOrder); //-------------------------------------------------------todo
+        const result = sslCommerzCollection.insertOne(confirmOrder);
+
+
+        // console.log('Redirecting to: ', GatewayPageURL)
       });
 
       app.post("/paymentOrder/success/:tranId", async (req, res) => {
@@ -858,25 +852,25 @@ async function run() {
           { transitionId: transId },
           {
             $set: {
-              confirmStatus: true,
-            },
+              confirmStatus: true
+            }
           }
-        );
+        )
         if (result.modifiedCount > 0) {
-          res.redirect(`http://localhost:5173/paymentOrder/success/${transId}`);
+          res.redirect(`http://localhost:5173/paymentOrder/success/${transId}`)
         }
-      });
+        // console.log("655", transId);
+      })
 
       app.post("/paymentOrder/fail/:tranId", async (req, res) => {
         const transId = req.params.tranId;
-        const result = await sslCommerzCollection.deleteOne({
-          transitionId: transId,
-        });
+        const result = await sslCommerzCollection.deleteOne({ transitionId: transId });
         if (result.deletedCount) {
-          res.redirect(`http://localhost:5173/paymentOrder/fail/${transId}`);
+          res.redirect(`http://localhost:5173/paymentOrder/fail/${transId}`)
         }
-      });
-    });
+      })
+
+    })
 
     /* forum communication */
     app.post("/forumPost", async (req, res) => {
@@ -930,8 +924,89 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await forumCollection.deleteOne(query);
-      res.send(result);
-    });
+      res.send(result)
+    })
+
+    ///////////------------------------------------------Leaderboard
+    app.get("/getBatch_Subject", async (req, res) => {
+      const batch_subject = await resultCollection.find().toArray()
+
+      const uniqueBatch = []
+      const uniqueSubject = []
+      const uniqueType = []
+
+      for (const data of batch_subject) {
+
+        if (!uniqueBatch.includes(data.batch)) {
+          uniqueBatch.push(data.batch);
+        }
+        if (!uniqueSubject.includes(data.subject)) {
+          uniqueSubject.push(data.subject);
+        }
+
+        if (!uniqueType.includes(data.examType)) {
+          uniqueType.push(data.examType);
+        }
+
+      }
+      res.send({ batch: uniqueBatch, subject: uniqueSubject, type: uniqueType })
+    })
+
+
+    app.get("/leaderboardResult", async (req, res) => {
+      const query = {};
+
+      if (req.query.inputSearch) {
+        query.stu_email = req.query.inputSearch;
+      }
+
+      if (req.query.batch) {
+        query.batch = req.query.batch;
+      }
+
+      if (req.query.subject) {
+        query.subjectName = req.query.subject;
+      }
+
+      if (req.query.type) {
+        query.examType = req.query.type;
+
+      }
+      console.log(query)
+      const sortBy = req.query.sort; // Default to ascending order
+
+
+      if (sortBy) {
+        const batch_subject = await resultCollection.find(query).toArray()
+        const studentResults = [];
+        batch_subject.forEach((record) => {
+          const { mark, stu_email, stu_image, batch, examType, stu_name } = record;
+
+          // Check if the student already exists in the studentResults array
+          const existingStudent = studentResults.find((student) => student.stu_email === stu_email);
+
+          if (existingStudent) {
+            // Update the total mark for the existing student
+            existingStudent.totalMark += mark;
+            existingStudent.stu_image = stu_image
+            existingStudent.batch = batch
+          } else {
+            // Create a new student object and add it to the studentResults array
+            studentResults.push({ stu_email, totalMark: mark, subject: req.query.subject ? req.query.subject : 'All Subject', stu_image: stu_image, batch: batch, examType: examType, stu_name: stu_name });
+          }
+        })
+        studentResults.sort((a, b) => b.totalMark - a.totalMark)
+        return res.send(studentResults)
+      }
+
+      try {
+        const result = await resultCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    })
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
