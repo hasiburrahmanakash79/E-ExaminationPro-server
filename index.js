@@ -113,9 +113,6 @@ async function run() {
       .db("E-ExaminationPro")
       .collection("result_Collection");
     // const sslCommerzCollection = client.db("E-ExaminationPro").collection("sslCommerz");
-
-    //---------------- bijoy
-
     const blogsCollection = client.db("E-ExaminationPro").collection("blogs");
     const commentCollection = client
       .db("E-ExaminationPro")
@@ -126,8 +123,8 @@ async function run() {
     const pricingCollection = client
       .db("E-ExaminationPro")
       .collection("packagePricing");
-
-    const sslCommerzCollection = client.db("E-ExaminationPro").collection("sslCommerz")
+    const sslCommerzCollection = client
+      .db("E-ExaminationPro").collection("sslCommerz")
 
     //---------showing comments---------------------------------------------------------------------------COMMENT--------------------------
     app.post("/comments", async (req, res) => {
@@ -138,13 +135,14 @@ async function run() {
 
     app.get("/comments", async (req, res) => {
       const blogId = req.query.id;
-      const userEmail = req.query.userEmail;
-      const query_0 = { BlogId: blogId };
-      const query_1 = { BlogId: blogId, userEmail: userEmail };
-      const allUserComments = await commentCollection.find(query_0).toArray();
+      const userEmail = req.query.userEmail
+      const query_0 = { BlogId: blogId }
+      const query_1 = { BlogId: blogId, userEmail: userEmail }
+      const allUserComments = await commentCollection.find(query_0).toArray()
       const userComments = await commentCollection.find(query_1).toArray();
-      res.send({ allUserComments, userComments });
-    });
+      res.send({ allUserComments, userComments })
+    })
+
 
     //------------for adding blogs by instructor
     app.post("/blogs", async (req, res) => {
@@ -162,6 +160,13 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await blogsCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.delete("/blogs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -298,10 +303,52 @@ async function run() {
       }
     });
 
+    app.get("/questionDate&Time", async (req, res) => {
+
+      const date = req.query.date
+      const time = req.query.examTime
+      const batch = req.query.batch
+
+      const query = { $and: [{ date: date }, { examTime: time }, { batch: batch }] }
+
+      const query1 = { $and: [{ date: date }, { batch: batch }] }
+      const result1 = await questionCollection.find(query1).toArray();
+
+      let isDateTimeRepeat = [];
+
+      if (time) {
+
+        for (data of result1) {
+          console.log(data.examTime
+          )
+          const timeGap = Math.abs((new Date(`${data.date}T${data.examTime}`) - new Date(`${date}T${time}`)) / 60000)
+          console.log(timeGap, 'gap')
+          if (timeGap < 15) {
+            isDateTimeRepeat.push(false)
+          }
+
+        }
+
+      }
+      console.log(isDateTimeRepeat)
+      if (isDateTimeRepeat.length == 0) {
+        res.send({ result: false });
+      } else {
+        res.send({ result: true });
+      }
+
+    });
+
+
+
     app.get("/questionPaper/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await questionCollection.findOne(query);
+      res.send(result);
+    });
+    app.get("/allQuestions", async (req, res) => {
+      const result = await questionCollection.find().toArray();
       res.send(result);
     });
 
@@ -323,32 +370,21 @@ async function run() {
 
     });
 
-
-
-
     app.post("/examdata", async (req, res) => {
       const data = req.body;
-
-      console.log(data);
       const studentEmail = data.stu_email
       const examId = data.examID
-
       const query2 = { stu_email: studentEmail, examID: examId }
       const existingUser = await resultCollection.findOne(query2);
       if (existingUser) {
         return res.send([]);
       }
-
       const seventyPercentMark = (70 / 100) * data.totalMark;
       const fortyPercentMark = (40 / 100) * data.totalMark;
-
-
       const query = { email: studentEmail }
       const userData = await userCollection.findOne(query)
 
       if (data.mark >= seventyPercentMark) {
-        //  console.log('70%',seventyPercentMark,studentPercentage,fortyPercentMark,data.mark,data.totalMark)
-
         if (!userData?.gems) {
           const options = { upsert: true }
           const doc = {
@@ -368,9 +404,7 @@ async function run() {
           const result = await userCollection.updateOne(query, doc, options);
         }
       }
-
       else if (data.mark >= fortyPercentMark) {
-
         if (!userData?.gems) {
           const options = { upsert: true }
           const doc = {
@@ -389,11 +423,8 @@ async function run() {
           };
           await userCollection.updateOne(query, doc, options);
         }
-
-
       }
       else {
-
         if (!userData?.gems) {
           const options = { upsert: true }
           const doc = {
@@ -412,12 +443,9 @@ async function run() {
           };
           await userCollection.updateOne(query, doc, options);
         }
-
       }
-
       const result = await resultCollection.insertOne(data);
       res.send(result);
-
     });
 
 
@@ -440,15 +468,6 @@ async function run() {
     })
 
 
-
-
-
-
-
-
-
-
-
     //---------------------------------------------------------------------------------get user exam data
     app.get("/userGivenExam/:email", async (req, res) => {
       const email = req.params.email;
@@ -461,6 +480,12 @@ async function run() {
 
     });
 
+
+    // get all results
+    app.get("/allResults", async (req, res) => {
+      const result = await resultCollection.find().toArray();
+      res.send(result);
+    })
     ////////////////User Get,///////////////////--------------------------------------------abir
     app.get("/users", async (req, res) => {
       const email = req.query.email;
@@ -815,7 +840,11 @@ async function run() {
     /* SSLCommerz Payment api  */
     const transition_id = new ObjectId().toString();
     app.post("/sslPayment", async (req, res) => {
+      // const orderProduct = await paymentCollection.findOne({
+      //   _id: new ObjectId(req.body.id)
+      // });
       const productInfo = req.body;
+      // console.log(productInfo);
       const data = {
         total_amount: productInfo?.postCode,
         currency: productInfo?.currency,
@@ -826,38 +855,41 @@ async function run() {
         ipn_url: "http://localhost:3030/ipn",
         shipping_method: "Courier",
         product_name: productInfo?.paymentName,
-        product_category: "Electronic",
-        product_profile: "general",
+        product_category: 'Electronic',
+        product_profile: 'general',
         cus_name: productInfo?.name,
         cus_email: productInfo?.email,
         cus_add1: productInfo?.address,
-        cus_add2: "Dhaka",
-        cus_city: "Dhaka",
-        cus_state: "Dhaka",
+        cus_add2: 'Dhaka',
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
         cus_postcode: productInfo?.postCode,
-        cus_country: "Bangladesh",
+        cus_country: 'Bangladesh',
         cus_phone: productInfo?.phone,
-        cus_fax: "01711111111",
-        ship_name: "Customer Name",
-        ship_add1: "Dhaka",
-        ship_add2: "Dhaka",
-        ship_city: "Dhaka",
-        ship_state: "Dhaka",
+        cus_fax: '01711111111',
+        ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
         ship_postcode: 1000,
-        ship_country: "Bangladesh",
+        ship_country: 'Bangladesh',
       };
-      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-      sslcz.init(data).then((apiResponse) => {
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+      sslcz.init(data).then(apiResponse => {
         // Redirect the user to payment gateway
-        let GatewayPageURL = apiResponse.GatewayPageURL;
+        let GatewayPageURL = apiResponse.GatewayPageURL
         res.send({ url: GatewayPageURL });
 
         const confirmOrder = {
           productInfo,
           confirmStatus: false,
-          transitionId: transition_id,
+          transitionId: transition_id
         };
-        const result = sslCommerzCollection.insertOne(confirmOrder); //-------------------------------------------------------todo
+        const result = sslCommerzCollection.insertOne(confirmOrder);
+
+
+        // console.log('Redirecting to: ', GatewayPageURL)
       });
 
       app.post("/paymentOrder/success/:tranId", async (req, res) => {
@@ -866,25 +898,24 @@ async function run() {
           { transitionId: transId },
           {
             $set: {
-              confirmStatus: true,
-            },
+              confirmStatus: true
+            }
           }
-        );
+        )
         if (result.modifiedCount > 0) {
-          res.redirect(`http://localhost:5173/paymentOrder/success/${transId}`);
+          res.redirect(`http://localhost:5173/paymentOrder/success/${transId}`)
         }
-      });
+        // console.log("655", transId);
+      })
 
       app.post("/paymentOrder/fail/:tranId", async (req, res) => {
         const transId = req.params.tranId;
-        const result = await sslCommerzCollection.deleteOne({
-          transitionId: transId,
-        });
+        const result = await sslCommerzCollection.deleteOne({ transitionId: transId });
         if (result.deletedCount) {
-          res.redirect(`http://localhost:5173/paymentOrder/fail/${transId}`);
+          res.redirect(`http://localhost:5173/paymentOrder/fail/${transId}`)
         }
-      });
-    });
+      })
+    })
 
     /* forum communication */
     app.post("/forumPost", async (req, res) => {
@@ -938,8 +969,8 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await forumCollection.deleteOne(query);
-      res.send(result);
-    });
+      res.send(result)
+    })
 
     ///////////------------------------------------------Leaderboard
     app.get("/getBatch_Subject", async (req, res) => {
@@ -1040,6 +1071,3 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`E-examPro Server is running on port ${port}`);
 });
-
-
-
