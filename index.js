@@ -7,7 +7,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.PAYMENT_SECRETE_KEY);
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 4000;
 
 // Middleware
 const corsConfig = {
@@ -907,7 +907,6 @@ async function run() {
           res.redirect(`http://localhost:5173/paymentOrder/fail/${transId}`)
         }
       })
-
     })
 
     /* forum communication */

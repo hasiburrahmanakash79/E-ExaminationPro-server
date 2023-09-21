@@ -47,7 +47,7 @@ git clone https://github.com/your-username/e-exampro-backend.git
 2. Navigate to the project directory and install dependencies.
 
 ```bash
-cd e-exampro-backend
+cd e-examPro-backend
 npm install
 ```
 
