@@ -849,8 +849,8 @@ async function run() {
         total_amount: productInfo?.postCode,
         currency: productInfo?.currency,
         tran_id: transition_id, // use unique tran_id for each api call
-        success_url: `http://localhost:4000/paymentOrder/success/${transition_id}`,
-        fail_url: `http://localhost:4000/paymentOrder/fail/${transition_id}`,
+        success_url: `https://e-exam-pro-server.vercel.app/paymentOrder/success/${transition_id}`,
+        fail_url: `https://e-exam-pro-server.vercel.app/paymentOrder/fail/${transition_id}`,
         cancel_url: "http://localhost:3030/cancel",
         ipn_url: "http://localhost:3030/ipn",
         shipping_method: "Courier",
@@ -903,7 +903,7 @@ async function run() {
           }
         )
         if (result.modifiedCount > 0) {
-          res.redirect(`http://localhost:5173/paymentOrder/success/${transId}`)
+          res.redirect(`https://e-exampro.web.app/paymentOrder/success/${transId}`)
         }
         // console.log("655", transId);
       })
@@ -912,7 +912,7 @@ async function run() {
         const transId = req.params.tranId;
         const result = await sslCommerzCollection.deleteOne({ transitionId: transId });
         if (result.deletedCount) {
-          res.redirect(`http://localhost:5173/paymentOrder/fail/${transId}`)
+          res.redirect(`https://e-exampro.web.app/paymentOrder/fail/${transId}`)
         }
       })
     })
