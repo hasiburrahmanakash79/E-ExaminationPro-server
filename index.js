@@ -184,6 +184,11 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/topSubjects", async (req, res) => {
+      const result = await subjectCollection.find().toArray();
+      res.send(result);
+    });
+
     app.post("/allsubjects", async (req, res) => {
       const data = req.body;
       const query = {
