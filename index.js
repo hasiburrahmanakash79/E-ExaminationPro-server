@@ -297,10 +297,9 @@ async function run() {
 
 
 
-        const finalData=response.filter(data=>  { return Math.abs((new Date(`${data.date}T${data.examTime}`) - new Date())/60000).toFixed(0)<1440
-      console.log(Math.abs((new Date(`${data.date}T${data.examTime}`) - new Date())/60000).toFixed(0))
+        const finalData=response.filter(data=>  { return (new Date(`${data.date}T${data.examTime}`) - new Date())/60000>-1440
+      console.log(((new Date(`${data.date}T${data.examTime}`) - new Date())/60000).toFixed(0)>-1440)
       })
-
         console.log(finalData.length,'data')
         res.send(finalData);
       }
