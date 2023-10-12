@@ -7,7 +7,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.PAYMENT_SECRETE_KEY);
 
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 3500;
 
 // Middleware
 const corsConfig = {
@@ -292,8 +292,9 @@ async function run() {
       } else {
         //console.log("hit-170");
         const query = { subjectName: subject, type: type, batch: stu_Batch };
+        console.log(query)
         const allQuestion = await questionCollection.find(query).toArray();
-        ////console.log(allQuestion,'-------------------------------------173')
+        // console.log(allQuestion,'-------------------------------------173')
         const query2 = {
           stu_email: instructor_email,
         };
@@ -314,14 +315,18 @@ async function run() {
             ? true
             : false,
         }));
-        // console.log(response, ".......................................237");
+        //console.log(response, ".......................................237");
 
 
 
-        const finalData=response.filter(data=>  { return (new Date(`${data.date}T${data.examTime}`) - new Date())/60000>-1440
-      console.log(((new Date(`${data.date}T${data.examTime}`) - new Date())/60000).toFixed(0)>-1440)
-      })
-        console.log(finalData.length,'data')
+        const finalData = response.filter(data => {
+         //console.log(data)
+          console.log(((new Date(`${data.date}T${data.examTime}`) - new Date()) / 60000).toFixed(0),'time',data.exam_code,'324' )
+          console.log(((new Date(`${data.date}T${data.examTime}`) - new Date()) / 60000).toFixed(0) > -1440,'time','324')
+          return (new Date(`${data.date}T${data.examTime}`) - new Date()) / 60000 > -1440
+
+        })
+        console.log(finalData.length, 'data')
         res.send(finalData);
       }
     });
@@ -350,15 +355,15 @@ async function run() {
       const query1 = { $and: [{ date: date }, { batch: batch }] }
       const result1 = await questionCollection.find(query1).toArray();
 
-      let  isDateTimeRepeat=[] ;
+      let isDateTimeRepeat = [];
 
       if (time) {
 
         for (data of result1) {
           console.log(data.examTime
           )
-          const timeGap =  Math.abs((new Date(`${data.date}T${data.examTime}`) - new Date(`${date}T${time}`)) / 60000)
-            console.log(timeGap,'gap')
+          const timeGap = Math.abs((new Date(`${data.date}T${data.examTime}`) - new Date(`${date}T${time}`)) / 60000)
+          console.log(timeGap, 'gap')
           if (timeGap < 15) {
             isDateTimeRepeat.push(false)
           }
@@ -367,7 +372,7 @@ async function run() {
 
       }
       console.log(isDateTimeRepeat)
-     if (isDateTimeRepeat.length==0) {
+      if (isDateTimeRepeat.length == 0) {
         res.send({ result: false });
       } else {
         res.send({ result: true });
