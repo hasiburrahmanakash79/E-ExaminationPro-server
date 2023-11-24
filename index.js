@@ -7,7 +7,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.PAYMENT_SECRETE_KEY);
 
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 3500;
 
 // Middleware
 const corsConfig = {
@@ -55,7 +55,7 @@ const verifyJWT = (req, res, next) => {
 
 const store_id = process.env.STORE_ID;
 const store_passwd = process.env.STORE_PASS;
-const is_live = false; //true for live, false for sandbox
+const is_live = true; //true for live, false for sandbox
 
 async function run() {
   try {
@@ -280,7 +280,9 @@ async function run() {
         return res.send(result);
       } else {
         const query = { subjectName: subject, type: type, batch: stu_Batch };
+        console.log(query)
         const allQuestion = await questionCollection.find(query).toArray();
+        // console.log(allQuestion,'-------------------------------------173')
         const query2 = {
           stu_email: instructor_email,
         };
@@ -293,14 +295,18 @@ async function run() {
             ? true
             : false,
         }));
-        // console.log(response, ".......................................237");
+        //console.log(response, ".......................................237");
 
 
 
-        const finalData=response.filter(data=>  { return (new Date(`${data.date}T${data.examTime}`) - new Date())/60000>-1440
-      console.log(((new Date(`${data.date}T${data.examTime}`) - new Date())/60000).toFixed(0)>-1440)
-      })
-        console.log(finalData.length,'data')
+        const finalData = response.filter(data => {
+         //console.log(data)
+          console.log(((new Date(`${data.date}T${data.examTime}`) - new Date()) / 60000).toFixed(0),'time',data.exam_code,'324' )
+          console.log(((new Date(`${data.date}T${data.examTime}`) - new Date()) / 60000).toFixed(0) > -1440,'time','324')
+          return (new Date(`${data.date}T${data.examTime}`) - new Date()) / 60000 > -1440
+
+        })
+        console.log(finalData.length, 'data')
         res.send(finalData);
       }
     });
